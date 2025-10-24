@@ -1,0 +1,178 @@
+.homeheader {
+  margin-top: 120px;
+  margin-left: 8%;
+}
+
+.homeheaderp {
+  color: rgb(147, 147, 147);
+}
+
+.homeheaderouterdiv {
+  display: flex;
+  flex-direction: row;
+  border: 1px solid rgb(100, 100, 100);
+  margin-right: 8%;
+  margin-top: 50px;
+  align-items: center;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: rgb(240, 240, 240);
+}
+
+.icond {
+  color: rgb(248, 188, 76);
+  font-size: 27px;
+  margin-right: 13px;
+  margin-bottom: auto;
+}
+
+.indiv1 {
+  display: flex;
+  flex-direction: column;
+}
+
+.indiv1 p {
+  margin-bottom: 0px;
+  position: relative;
+  top: 0px;
+}
+
+.indiv1p1 {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.indiv1p2 {
+  color: rgb(127, 127, 127);
+}
+
+.bar {
+  width: 68%;
+  background-color: #000000;
+  transition: width 0.4s ease-in-out;
+}
+
+.progress {
+  background-color: rgb(214, 213, 213);
+  height: 8px !important;
+  width: 300px;
+  margin-bottom: 10px;
+}
+
+.hdiv2 {
+  margin-top: 25px;
+}
+
+.hlabel {
+  color: rgb(139, 139, 139);
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.label2 {
+  color: rgb(139, 139, 139);
+  margin-left: 200px;
+  font-size: 16px;
+}
+
+.labelp {
+  color: rgb(139, 139, 139);
+}
+
+.homebtn {
+  margin-left: auto;
+  padding: 10px;
+  margin-right: 50px;
+  border-radius: 7px;
+  background-color: black;
+  color: white;
+  transition: background-color 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.homebtn:hover {
+  background-color: rgb(70, 70, 70);
+  transform: scale(1.05);
+}
+
+.bi-caret-right {
+  margin-right: 10px;
+}
+
+.mainn {
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  margin-left: 8%;
+  margin-right: 8%;
+}
+
+.h5 {
+  margin-left: 8%;
+  margin-top: 40px;
+}
+
+.thisweekdiv {
+  display: flex;
+  flex-direction: column;
+  margin-top: 30px;
+  border: 1px solid rgb(214, 213, 213);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.weekdiv2 {
+  display: flex;
+  flex-direction: row;
+  margin-top: 10px;
+}
+
+.weekp {
+  margin-left: auto;
+}
+
+.c {
+  color: black;
+  font-size: 16px;
+  margin-right: 5px;
+}
+
+/* ✅ Responsive Styles */
+@media (max-width: 480px) {
+  .mainn {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0px;
+  }
+
+  .thisweekdiv {
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+
+  .homeheaderouterdiv {
+    width: calc(100% - 20px);
+    margin-left: 0px;
+    margin-right: 20px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid rgb(100, 100, 100);
+    box-sizing: border-box;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .progress {
+    width: 90%;
+  }
+
+  .hlabel {
+    margin-top: 2px;
+    margin-bottom: 0px;
+  }
+
+  .label2 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+}

@@ -1,0 +1,172 @@
+body.darkmode {
+  background-color: black !important;
+  color: white !important;
+}
+
+body.darkmode header,
+body.darkmode .navbar {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+body.darkmode .navbar a,
+body.darkmode .nav-link {
+  color: #fff !important;
+}
+
+body.darkmode .btn {
+  background-color: #222 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+body.darkmode .btn:hover {
+  background-color: #333 !important;
+}  
+
+body.darkmode .navbar-toggler{
+  background-color: white !important;
+  color: black !important;
+}
+body.darkmode .headernameanddiv {
+  background-color: transparent;
+  border-color: transparent;
+  color: #fff; /* text white */
+}
+
+body.darkmode .nav-link:hover{
+    background-color: #333 !important;
+}
+
+body.darkmode .headernameanddiv:hover,
+body.darkmode .headernameanddiv:active {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.darkmode .logoutdiv{
+  background-color: black;
+  color: white;
+}
+
+body.darkmode .ldiv:hover{
+   background-color: #222 !important;
+}
+
+
+
+
+body.darkmode .homeheader {
+  color: #f5f5f5;
+}
+
+body.darkmode .homeheaderp {
+  color: rgb(180, 180, 180);
+}
+
+body.darkmode .homeheaderouterdiv {
+  background-color: rgb(35, 35, 35);
+  border: 1px solid rgb(90, 90, 90);
+}
+
+body.darkmode .icond {
+  color: rgb(255, 214, 94);
+}
+
+body.darkmode .indiv1p1 {
+  color: #ffffff;
+}
+
+body.darkmode .indiv1p2 {
+  color: rgb(180, 180, 180);
+}
+
+body.darkmode .progress {
+  background-color: rgb(70, 70, 70);
+}
+
+body.darkmode .bar {
+  background-color: rgb(255, 255, 255);
+}
+
+body.darkmode .hlabel,
+body.darkmode .label2,
+body.darkmode .labelp {
+  color: rgb(180, 180, 180);
+}
+
+body.darkmode .homebtn {
+  background-color: #f5f5f5;
+  color: #000;
+}
+
+body.darkmode .homebtn:hover {
+  background-color: #e0e0e0;
+}
+
+body.darkmode .bi-caret-right {
+  color: #000;
+}
+
+
+body.darkmode  .maindueout{
+  background-color:rgb(35, 35, 35)
+}
+
+body.darkmode .bbtn{
+  background-color:rgb(35, 35, 35) ;
+
+}
+body.darkmode .bbtn:hover{
+  background-color:rgb(35, 35, 35) ;
+   box-shadow: 0px 10px 20px rgb(35, 35, 35);
+  
+}
+
+
+body.darkmode .mmsp{
+  color: white;
+}
+body.darkmode .spanm{
+  color: black;
+}
+body.darkmode .mmsp:hover{
+   color: black;
+}
+
+body.darkmode .subjectbtn{
+  color: white;
+}
+
+body.darkmode .subjectbtn:hover{
+  color: black;
+}
+body.darkmode .bar2{
+  background-color: white;
+}
+
+body.darkmode .c{
+  color: white;
+
+}
+
+body.darkmode .learnmain .div{
+  background-color: rgb(35, 35, 35);
+}
+body.darkmode .learnmain .div label{
+  color:white;
+}
+
+body.darkmode .lbar{
+  background-color: white!important;
+}body.darkmode .learnmain .div{
+  background-color: rgb(35, 35, 35);
+}
+body.darkmode .learnmain .div p{
+  color:white;
+}
+
+body.darkmode .learnmain .div button{
+  color:black;
+  background-color:white;
+}
