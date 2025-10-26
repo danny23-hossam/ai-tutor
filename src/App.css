@@ -170,3 +170,8 @@ body.darkmode .learnmain .div button{
   color:black;
   background-color:white;
 }
+
+body.darkmode .remindertable{
+  background-color: rgb(35, 35, 35);
+    box-shadow: 0 4px 12px rgba(252, 252, 252, 0.15); 
+}

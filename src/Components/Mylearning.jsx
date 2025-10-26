@@ -1,7 +1,29 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Header from './Header'
 import './Mylearning.css'
 const Mylearning = () => {
+  const [lessons,setLessons]=useState([]);
+  const [lesson,setlesson]=useState({name:""});
+  
+const handleinputchange = (e) => {
+  setlesson(prev => ({
+    ...prev,
+    name:e.target.value
+  }));
+};
+
+const createlesson=()=>{
+
+  if(lesson.name.trim()===""){
+    return
+  }
+   console.log('New Lesson Created:', lesson);
+   
+   setLessons(prev => [...prev, lesson]); 
+  setlesson({ name: "" }); // clear input
+ 
+
+}
   return (
     <>
     <Header/>
@@ -12,7 +34,7 @@ const Mylearning = () => {
 <p>Continue your learning journey</p>
    </div>
    <div className='learnhdiv2'>
-<button className='homebtn' data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus"></i>Start a New Lesson</button>
+<button className='startlessonbtn' data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus"></i>Start a New Lesson</button>
 
 
 
@@ -29,14 +51,15 @@ const Mylearning = () => {
        
           <p className='modp'>Create a new learning session</p>
           <label htmlFor="" className='mt-3 mb-3 modl'>Lesson Title</label>
-          <input type="text" className='form-control' placeholder='Enter Lesson Name'/>
+          <input type="text" className='form-control' placeholder='Enter Lesson Name'  value={lesson.name}
+                    onChange={handleinputchange}/>
      
      
    
       
      <div className='moddiv '>
  <button type="button" className=" mb-4 offset-2 modbtn btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" className=" mb-4 modbtn btn btn-secondary">Create Lesson</button>
+        <button type="button" className=" mb-4 modbtn btn btn-secondary" onClick={createlesson}>Create Lesson</button>
      </div>
        
      
@@ -82,8 +105,12 @@ const Mylearning = () => {
 
 
 
-       <div className='div'>
-<h6>Newton</h6>
+    
+
+
+{lessons.map((item,index)=>(
+         <div className='div' key={index}>
+<h6>{item.name}</h6>
 <label htmlFor="">Progress</label>
 
 <div className="progress mb-3">
@@ -94,80 +121,12 @@ const Mylearning = () => {
 
 
        </div>
+))}
 
 
+      
 
-
-     
-       <div className='div'>
-<h6>Newton</h6>
-<label htmlFor="">Progress</label>
-
-<div className="progress mb-3">
-  <div className="progress-bar lbar" style={{ width: '25%' ,backgroundColor:"black"}}></div>
-</div>
-<p><i class="bi bi-clock"></i> Total 24 minutes</p>
-<button className='col-10 mb-4 '>Resume</button>
-
-
-       </div>
-
-
-       <div className='div'>
-<h6>Newton</h6>
-<label htmlFor="">Progress</label>
-
-<div className="progress mb-3">
-  <div className="progress-bar lbar" style={{ width: '25%' ,backgroundColor:"black"}}></div>
-</div>
-<p><i class="bi bi-clock"></i> Total 24 minutes</p>
-<button className='col-10 mb-4 '>Resume</button>
-
-
-       </div>
-
-
-       <div className='div'>
-<h6>Newton</h6>
-<label htmlFor="">Progress</label>
-
-<div className="progress mb-3">
-  <div className="progress-bar lbar" style={{ width: '25%' ,backgroundColor:"black"}}></div>
-</div>
-<p><i class="bi bi-clock"></i> Total 24 minutes</p>
-<button className='col-10 mb-4 '>Resume</button>
-
-
-       </div>
-
-
-       <div className='div'>
-<h6>Newton</h6>
-<label htmlFor="">Progress</label>
-
-<div className="progress mb-3">
-  <div className="progress-bar lbar" style={{ width: '25%' ,backgroundColor:"black"}}></div>
-</div>
-<p><i class="bi bi-clock"></i> Total 24 minutes</p>
-<button className='col-10 mb-4 '>Resume</button>
-
-
-       </div>
-
-
-       <div className='div'>
-<h6>Newton</h6>
-<label htmlFor="">Progress</label>
-
-<div className="progress mb-3">
-  <div className="progress-bar lbar" style={{ width: '25%' ,backgroundColor:"black"}}></div>
-</div>
-<p><i class="bi bi-clock"></i> Total 24 minutes</p>
-<button className='col-10 mb-4 '>Resume</button>
-
-
-       </div>
-
+      
 
     </main>
 

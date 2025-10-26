@@ -30,7 +30,7 @@ Currently, two official plugins are available:
 
 ## 👥 Team
 **Leader:** Danny Hossam  
-**Team Members:** [Add names here]
+**Team Members:** Ahmed Ismail
 
 ---
 

@@ -1,9 +1,10 @@
 import React, {  useState } from 'react'
 import '../App.css'
 import './Header.css'
+import { useNavigate } from 'react-router-dom'
 
 const Header = () => {
-
+const navigate=useNavigate();
   const [darkmode, setdarkmode] = useState(false);
 const [logoutdiv,setlogoutdiv]=useState(false);
 
@@ -72,14 +73,14 @@ const [logoutdiv,setlogoutdiv]=useState(false);
           <div className="collapse navbar-collapse order-4 order-lg-3" id="navbarNav">
             <ul className="navbar-nav">
               <li className="nav-item">
-                <a className="nav-link active" href="#"><i className="bi bi-house-door"></i> Home</a>
+                <a className="nav-link active" onClick={()=>navigate("/")}><i className="bi bi-house-door"></i> Home</a>
               </li>
               <li className="nav-item">
-                <a className="nav-link active" href="#"><i className="bi bi-book"></i> My Learning</a>
+                <a className="nav-link active"  onClick={()=>navigate("/mylearning")}><i className="bi bi-book" ></i> My Learning</a>
               </li>
 
               <li className="nav-item">
-                <a className="nav-link active" href="#"><i class="bi bi-bell"></i> Reminders</a>
+                <a className="nav-link active" href="#" onClick={()=>navigate("/reminder")}><i class="bi bi-bell"></i> Reminders</a>
               </li>
              
             </ul>
