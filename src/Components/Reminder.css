@@ -1,0 +1,125 @@
+.remindermaindiv1{
+   
+   
+    position: relative;
+      margin-top: 15vh;
+    margin-left: 10vw;
+    display: flex;
+    flex-direction: row;
+} 
+.remindermaindiv1 h5{
+    font-size: 30px;
+    font-weight: 400;
+    
+}
+.btnr{
+    margin-left: auto;
+   
+    margin-right: 20vw;
+ width: 200px;
+ height: 40px;
+ border-radius: 20px;
+ background-color:  rgb(24, 119, 242);
+ color: white;
+ position: relative;
+ top: 25px;
+ transition: background-color 1s ease-in-out;
+}
+
+.btnr:hover{
+    background-color:rgb(4, 41, 93) ;
+}
+
+.remindertable{
+    margin-left: 10vw;
+    margin-top: 2vw;
+ width: 80%;
+    box-shadow: 0px;
+    border-collapse: collapse;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+      border-radius: 20px;
+}
+th,tr{
+        text-align: center;
+}
+
+th{
+    padding-top: 10px;
+    border-bottom: 1px solid rgb(222, 221, 221);
+    padding-bottom: 10px;
+}
+.remindertable tr:not(:last-child) {
+  border-bottom: 1px solid rgb(222, 221, 221);
+}
+.reminder{
+    text-align: left;
+    position: relative;
+    left: 15px;
+}
+.remindertd{
+    text-align: left;
+}
+.tabletrash{
+    color: red;
+}
+.tabletrash:hover{
+    cursor: pointer;
+}
+
+.searchdiv{
+    margin-left: 10vw;
+    margin-right: 10vw;
+    margin-top: 5vh;
+ 
+     
+}
+.search{
+    border-radius: 20px;
+}
+
+
+
+@media (max-width: 480px) {
+.remindermaindiv1{
+    display: flex;
+    flex-direction: column;
+}
+
+}
+
+/* 📱 Mobile Small (320px–374px) */
+@media screen and (min-width: 320px) and (max-width: 374px) {
+.btnr{
+
+ position: relative;
+ top: 0px;
+ right: 30px;
+
+}
+.remindertable{
+    position: relative;
+    right: 20px;
+}
+}
+
+/* 📱 Mobile Medium (375px–424px) */
+@media screen and (min-width: 375px) and (max-width: 424px) {
+.btnr{
+
+ position: relative;
+ top: 0px;
+ right: 70px;
+
+}
+}
+
+/* 📱 Mobile Large (425px–480px) */
+@media screen and (min-width: 425px) and (max-width: 480px) {
+.btnr{
+
+ position: relative;
+ top: 0px;
+ right: 100px;
+
+}
+}
