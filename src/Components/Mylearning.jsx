@@ -1,139 +1,122 @@
-import React, { useState } from 'react'
-import Header from './Header'
-import './Mylearning.css'
+import React, { useState } from "react";
+import Header from "./Header";
+import { useNavigate } from "react-router-dom";
+import "./Mylearning.css";
 const Mylearning = () => {
-  const [lessons,setLessons]=useState([]);
-  const [lesson,setlesson]=useState({name:""});
-  
-const handleinputchange = (e) => {
-  setlesson(prev => ({
-    ...prev,
-    name:e.target.value
-  }));
-};
+  const [lessons, setLessons] = useState([]);
+  const [lesson, setlesson] = useState({ name: "" });
+  const navigate = useNavigate();
 
-const createlesson=()=>{
+  const handleinputchange = (e) => {
+    setlesson((prev) => ({
+      ...prev,
+      name: e.target.value,
+    }));
+  };
 
-  if(lesson.name.trim()===""){
-    return
-  }
-   console.log('New Lesson Created:', lesson);
-   
-   setLessons(prev => [...prev, lesson]); 
-  setlesson({ name: "" }); // clear input
- 
+  const createlesson = () => {
+    if (lesson.name.trim() === "") {
+      return;
+    }
+    console.log("New Lesson Created:", lesson);
 
-}
+    setLessons((prev) => [...prev, lesson]);
+    setlesson({ name: "" }); // clear input
+  };
   return (
     <>
-    <Header/>
+      <Header />
 
-    <header className='mylearningheader'>
-   <div className='learnhdiv1 col-10'>
-<h5>My Learning</h5>
-<p>Continue your learning journey</p>
-   </div>
-   <div className='learnhdiv2'>
-<button className='startlessonbtn' data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus"></i>Start a New Lesson</button>
+      <header className="mylearningheader">
+        <div className="learnhdiv1 col-10">
+          <h5>My Learning</h5>
+          <p>Continue your learning journey</p>
+        </div>
+        <div className="learnhdiv2">
+          <button
+            className="startlessonbtn"
+            data-bs-toggle="modal"
+            data-bs-target="#exampleModal"
+          >
+            <i class="bi bi-plus"></i>Start a New Lesson
+          </button>
 
+          <div
+            className="modal fade"
+            id="exampleModal"
+            tabindex="-1"
+            aria-labelledby="exampleModalLabel"
+            aria-hidden="true"
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <button
+                  type="button"
+                  className="btn-close "
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+                <h5 className="modal-title" id="exampleModalLabel">
+                  Start a New Lesson
+                </h5>
 
+                <p className="modp">Create a new learning session</p>
+                <label htmlFor="" className="mt-3 mb-3 modl">
+                  Lesson Title
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter Lesson Name"
+                  value={lesson.name}
+                  onChange={handleinputchange}
+                />
 
-<div className="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div className="modal-dialog">
-    <div className="modal-content">
-       
-   
-      
-        
-        <button type="button" className="btn-close " data-bs-dismiss="modal" aria-label="Close"></button>
-        <h5 className="modal-title" id="exampleModalLabel">Start a New Lesson</h5>
-      
-       
-          <p className='modp'>Create a new learning session</p>
-          <label htmlFor="" className='mt-3 mb-3 modl'>Lesson Title</label>
-          <input type="text" className='form-control' placeholder='Enter Lesson Name'  value={lesson.name}
-                    onChange={handleinputchange}/>
-     
-     
-   
-      
-     <div className='moddiv '>
- <button type="button" className=" mb-4 offset-2 modbtn btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" className=" mb-4 modbtn btn btn-secondary" onClick={createlesson}>Create Lesson</button>
-     </div>
-       
-     
+                <div className="moddiv ">
+                  <button
+                    type="button"
+                    className=" mb-4 offset-2 modbtn btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className=" mb-4 modbtn btn btn-secondary"
+                    onClick={createlesson}
+                  >
+                    Create Lesson
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
 
-    </div>
-  </div>
-</div>
+      <main className="learnmain  mt-5">
+        {lessons.map((item, index) => (
+          <div className="div" key={index}>
+            <h6>{item.name}</h6>
+            <label htmlFor="">Progress</label>
 
-
-   </div>
-
-    </header>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <main className='learnmain  mt-5'>
-
-
-
-    
-
-
-{lessons.map((item,index)=>(
-         <div className='div' key={index}>
-<h6>{item.name}</h6>
-<label htmlFor="">Progress</label>
-
-<div className="progress mb-3">
-  <div className="progress-bar lbar" style={{ width: '25%' ,backgroundColor:"black"}}></div>
-</div>
-<p><i class="bi bi-clock"></i> Total 24 minutes</p>
-<button className='col-10 mb-4 '>Resume</button>
-
-
-       </div>
-))}
-
-
-      
-
-      
-
-    </main>
-
-
-   
+            <div className="progress mb-3">
+              <div
+                className="progress-bar lbar"
+                style={{ width: "25%", backgroundColor: "black" }}
+              ></div>
+            </div>
+            <p>
+              <i class="bi bi-clock"></i> Total 24 minutes
+            </p>
+            <button className="col-10 mb-4" onClick={() => navigate("/lesson")}>
+              Resume
+            </button>
+          </div>
+        ))}
+      </main>
     </>
-  )
-}
+  );
+};
 
-export default Mylearning
+export default Mylearning;

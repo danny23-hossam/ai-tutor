@@ -1,0 +1,63 @@
+.learning-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+  position: fixed;
+  top: 0;
+  z-index: 2000;
+  width: 100%;
+}
+
+.back-link-container {
+  cursor: pointer;
+  color: #000;
+  font-weight: 500;
+}
+
+.back-link-container:hover {
+  color: #ff6900;
+}
+
+.back-link-container:hover .back-link {
+  color: #ff6900;
+}
+
+.lesson-title {
+  font-weight: 600;
+  color: #212529;
+}
+
+.lesson-instructor {
+  font-size: 0.9rem;
+}
+
+.header-divider {
+  margin: 0;
+  border-color: #e9ecef;
+}
+
+.vertical-divider {
+  height: 40px;
+  width: 2px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .lesson-title {
+    font-size: 1rem;
+  }
+
+  .lesson-instructor {
+    font-size: 0.85rem;
+  }
+
+  .back-link {
+    font-size: 0.9rem;
+  }
+
+  .text-muted.small {
+    display: none;
+  }
+  .vertical-divider {
+    display: none;
+  }
+}

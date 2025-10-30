@@ -1,0 +1,40 @@
+.sidebarlearning {
+  height: 100vh;
+  padding-top: 90px;
+  overflow: auto;
+  width: 20% !important;
+}
+
+.learningContainer {
+  height: 100vh;
+  padding-top: 100px;
+  overflow: auto;
+  width: 80% !important;
+}
+
+.menu-button{
+  background-color: #ff6900 !important;
+  border: transparent !important;
+}
+
+@media (min-width: 1200px){
+  .learningContainer{
+    margin-left: 20% !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .learningContainer{
+    width: 100% !important;
+  }
+  .sidebarlearning {
+    width: 50% !important;
+  }
+  
+@media (max-width: 768px) {
+}
+  .sidebarlearning {
+    width: 80% !important;
+  }
+}
+
