@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Nav, Tab } from "react-bootstrap";
 import VideoPlayer from "./VideoPlayer";
 import AudioPlayer from "./AudioPlayer";
+import AnalyticsSection from "./AnalyticsSection";
+import ExamSection from "./ExamSection";
 import Quiz from "./Quiz";
 import "./LessonContent.css";
 
@@ -52,11 +54,11 @@ function LessonContent({ mode, selectedName }) {
         </Tab.Pane>
 
         <Tab.Pane eventKey="exam">
-          <p>Exam section coming soon...</p>
+          <ExamSection />
         </Tab.Pane>
 
         <Tab.Pane eventKey="analytics">
-          <p>Analytics section coming soon...</p>
+          <AnalyticsSection />
         </Tab.Pane>
       </Tab.Content>
     </Tab.Container>

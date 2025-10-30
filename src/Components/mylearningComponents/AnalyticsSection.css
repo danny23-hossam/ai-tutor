@@ -1,0 +1,22 @@
+.analytics-card {
+    border-radius: 8px;
+}
+
+.analytics-progress-track {
+    background-color: #f1f1f1 !important;
+    border-radius: 0;
+    overflow: visible !important;
+}
+
+.analytics-progress-fill {
+  border-radius: 10px !important;
+}
+
+.analytics-progress-fill .progress-bar {
+  border-radius: 10px !important;
+}
+
+.progress {
+  border-radius: 10px !important;
+  overflow: hidden;
+}
