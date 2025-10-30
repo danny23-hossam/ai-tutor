@@ -8,6 +8,7 @@
     width: 25%;
     text-align: center;
     height:40px;
+    background-color: #fff !important;
 }
 
 .lesson-tabs .nav-link {
