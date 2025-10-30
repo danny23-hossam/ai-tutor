@@ -1,0 +1,26 @@
+.lesson-tabs{
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.lesson-tabs .nav-item {
+    width: 25%;
+    text-align: center;
+    height:40px;
+}
+
+.lesson-tabs .nav-link {
+  color: rgba(0,0,0,0.7) !important;
+  font-weight: 500;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.lesson-tabs .nav-link.active {
+  background-color: #ff6900 !important;
+  color: #fff !important;
+}
