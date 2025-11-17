@@ -1,0 +1,114 @@
+body{
+     background-color: #fdfdfd; /* very soft off-white */
+}
+
+.loginheader{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 20%;                 /* move top edge to 50% of viewport */
+    left: 50%;                /* move left edge to 50% of viewport */
+    transform: translate(-50%, -50%); 
+}
+
+
+.loginheader div{
+    background-color: black;
+    color: white;
+    padding: 16px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+   border-radius: 12px;
+   margin-bottom: 10px;
+   font-size: 20px;
+}
+
+.loginheader p{
+    color: darkgrey;
+}
+
+
+.loginmain{
+    position: absolute;
+      top: 30%; /* adjust so it appears below header */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.loginform{
+    padding:35px;
+    width: 35vw;;
+    background-color: white;
+     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* soft, gentle shadow */
+    border-radius: 10px;
+}
+
+.loginp1{
+    text-align: center;
+    font-size: 18px;
+}
+.loginform label{
+    font-weight: 500;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+.loginform input{
+    display: block;
+    background-color: rgb(232, 231, 231);
+    border: none;
+    padding: 5px;
+    border-radius: 8px;
+    width: 90%;
+    padding-left: 17px;
+}
+
+.loginform button{
+    background-color: black;
+    color: white;
+    width: 100%;
+    margin-top: 17px;
+    padding:6px;
+    border-radius: 12px;
+}
+
+.loginp2{
+    margin-top: 15px;
+    text-align: center;
+    color: grey;
+}
+.loginp2 a{
+    color: black;
+    text-decoration: none;
+    margin-left: 5px;
+}
+.loginp2 a:hover{
+   
+    text-decoration: underline;
+  
+}
+
+.loginfooter{
+      position: absolute;
+      top: 85%; /* adjust so it appears below header */
+    left: 50%;
+    transform: translateX(-50%);
+    color: grey;
+}
+
+
+@media (max-width:769px) {
+   
+    .loginform{
+    width: 90vw;
+    margin-bottom: 10px;
+    }
+    .loginfooter{
+        
+      top: 90%; /* adjust so it appears below header */
+   width: 100vw;
+   margin-left: 6px;
+   text-align: center;
+    }
+}

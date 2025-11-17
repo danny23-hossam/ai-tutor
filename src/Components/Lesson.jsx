@@ -6,7 +6,7 @@ import LessonContent from "./mylearningComponents/LessonContent";
 import AITutorPanel from "./mylearningComponents/AITutorPanel";
 import "./Lesson.css";
 function App() {
-  const [showTutor, setShowTutor] = useState(false);
+  
   const [showSidebar, setShowSidebar] = useState(false);
   const [mode, setMode] = useState("video");
   const [selectedName, setSelectedName] = useState("");

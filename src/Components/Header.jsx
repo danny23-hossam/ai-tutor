@@ -51,9 +51,7 @@ const Header = () => {
                   <div className="ldiv fluid-container">
                     <i class="bi bi-person iconh"></i>Profile
                   </div>
-                  <div className="ldiv">
-                    <i class="bi bi-gear iconh"></i>Settings
-                  </div>
+                 
                   <hr className="line" />
                   <div className="ldiv">
                     <i class="bi bi-box-arrow-right iconh"></i>Signout
