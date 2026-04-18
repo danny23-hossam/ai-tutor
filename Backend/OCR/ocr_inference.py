@@ -1,16 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, Query
 import tempfile
+from contextlib import asynccontextmanager
 
 from .settings import load_settings
 from .model_loader import load_model_and_processor
 from .pipeline import process_file
 
 
-app = FastAPI(title="OCR Service")
-
-
-@app.on_event("startup")
-def startup():
+def initialize_app_state(app: FastAPI) -> None:
     settings = load_settings()   # reads config.yaml
     cfg = settings.cfg
 
@@ -26,6 +23,15 @@ def startup():
     app.state.device = device
     app.state.eos_id = eos_id
     app.state.pad_id = pad_id
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_app_state(app)
+    yield
+
+
+app = FastAPI(title="OCR Service", lifespan=lifespan)
 
 
 @app.get("/")
