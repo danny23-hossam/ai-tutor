@@ -1,14 +1,15 @@
 from fastapi import FastAPI, UploadFile, File, Query
 import tempfile
 
-from settings import load_settings
-from model_loader import load_model_and_processor
-from pipeline import process_file
+from .settings import load_settings
+from .model_loader import load_model_and_processor
+from .pipeline import process_file
 
 
 app = FastAPI(title="OCR Service")
 
-@app.get("/")
+
+@app.on_event("startup")
 def startup():
     settings = load_settings()   # reads config.yaml
     cfg = settings.cfg
@@ -25,6 +26,12 @@ def startup():
     app.state.device = device
     app.state.eos_id = eos_id
     app.state.pad_id = pad_id
+
+
+@app.get("/")
+def root():
+    return {"message": "OCR Service is running"}
+
 
 @app.post("/ocr")
 async def ocr_endpoint(
