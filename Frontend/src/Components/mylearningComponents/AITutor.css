@@ -10,63 +10,136 @@
   font-size: 16px;
   z-index: 3000;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  background-color: #ff6900 !important;
+  background-color: var(--color-accent, #ff6900) !important;
   border: transparent !important;
-  padding:0 !important;
+  padding: 0 !important;
+  /* needed for ::before stacking */
+  isolation: isolate;
+}
+
+/* Attention pulse ring */
+.ai-float-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: ai-pulse 3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  pointer-events: none;
+  will-change: box-shadow; /* promote to compositor layer */
+}
+
+@keyframes ai-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(255, 105, 0, 0.55); }
+  60%  { box-shadow: 0 0 0 14px rgba(255, 105, 0, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(255, 105, 0, 0); }
 }
 
 /* Panel */
 .ai-tutor-panel {
   position: fixed;
   top: 0;
+  bottom: 0;           /* anchors to visible bottom — shrinks when keyboard opens */
   right: -400px;
   width: 400px;
-  height: 100vh;
+  /* height is derived from top+bottom, not set explicitly.
+     This means when the virtual keyboard pushes the viewport up,
+     the panel shrinks naturally instead of leaving dead space. */
   background: #fff;
   box-shadow: -3px 0 12px rgba(0, 0, 0, 0.1);
   transition: right 0.3s ease-in-out;
   z-index: 1002;
   display: flex;
   flex-direction: column;
-  padding-top: 90px !important;
+  padding-top: 60px;
+  /* flex handles internal overflow — don't let the shell itself scroll */
+  overflow: hidden;
 }
 
 .ai-tutor-panel.open {
   right: 0;
 }
 
-/* Header */
+/* Transparent backdrop — intercepts outside clicks to close the panel */
+.ai-tutor-backdrop {
+  position: fixed;
+  inset: 0;              /* covers the entire viewport */
+  z-index: 1001;         /* below panel (1002) but above page content */
+  background: transparent;
+  cursor: default;
+}
+
+/* ── Panel header: icon | text (flex:1) | close btn ── */
+.ai-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+
 .ai-icon {
-  background: #e9f2ff;
-  color: #0d6efd;
+  background: var(--color-accent-muted, rgba(255,105,0,0.12));
+  color: var(--color-accent, #ff6900);
   border-radius: 50%;
   width: 38px;
   height: 38px;
+  min-width: 38px;   /* never squish */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
 }
 
+/* Text: grows to fill space between icon and button */
+.ai-header-text {
+  flex: 1;
+  min-width: 0;     /* allow shrinking + ellipsis */
+  overflow: hidden;
+}
+
+.ai-header-text .fw-bold,
+.ai-header-text small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Close button: fixed 36×36 circle, always on the right */
 .ai-close-btn {
-  font-size: 1.5rem;
-  border-radius: 20px !important;
-  text-decoration: none;
-  border: none;
-  padding: 5px !important;
-  line-height: 1;
+  width: 36px  !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent !important;
+  color: #333;
+  margin-left: auto;   /* push to far right */
 }
 
 .ai-close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1) !important;
+  background-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Body */
+
+/* Body — scrolls messages, MUST NOT propagate scroll to main page */
 .ai-body {
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fafafa;
   padding: 1rem;
+  /* Stop scroll from bleeding through to the page behind on mobile */
+  overscroll-behavior: contain;
+  /* Tell browser this element handles vertical touch scrolling */
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch; /* smooth inertia scroll on iOS */
 }
 
 /* Chat Bubbles */
@@ -85,7 +158,7 @@
 }
 
 .user-bubble {
-  background-color: #0d6efd;
+  background-color: var(--color-accent, #ff6900);
   color: white;
   border-top-right-radius: 0;
 }
@@ -104,9 +177,9 @@
 }
 
 .ai-input:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  border: 2px solid #0d6efd !important;
+  outline: 2px solid transparent; /* invisible but allows forced-colors/HCM override */
+  box-shadow: 0 0 0 3px var(--color-accent-ring, rgba(255,105,0,0.3)) !important;
+  border: 2px solid var(--color-accent, #ff6900) !important;
 }
 
 
@@ -122,7 +195,7 @@
 }
 
 .ai-send-btn:enabled {
-  background-color: #0d6efd !important;
+  background-color: var(--color-accent, #ff6900) !important;
   color: white !important;
 }
 
@@ -145,3 +218,97 @@
     right: 15px;
   }
 }
+
+/* ── Scroll lock: applied to <html> when panel is open on mobile ── */
+/* This prevents the main page from scrolling behind the panel.      */
+@media (max-width: 576px) {
+  html.ai-panel-open,
+  html.ai-panel-open body {
+    overflow: hidden;
+    /* Prevent layout shift from scrollbar disappearing on desktop */
+    position: relative;
+  }
+}
+
+/* ── Chat bubble entrance animations (replaces framer-motion motion.div) ──
+   Uses transform+opacity only → stays on compositor layer, 60fps guaranteed.
+   Same cubic-bezier as the previous EASE_OUT_QUART constant.             */
+@keyframes ai-bubble-in-user {
+  from { opacity: 0; transform: translate(12px, 4px); }
+  to   { opacity: 1; transform: translate(0,   0);    }
+}
+@keyframes ai-bubble-in-tutor {
+  from { opacity: 0; transform: translate(-12px, 4px); }
+  to   { opacity: 1; transform: translate(0,    0);    }
+}
+
+/* Apply to bubble classes — only NEW bubbles animate (animation runs once) */
+.user-bubble {
+  animation: ai-bubble-in-user 0.22s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+.ai-bubble-msg {
+  animation: ai-bubble-in-tutor 0.22s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .user-bubble, .ai-bubble-msg {
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ── Dark mode overrides for AI Tutor panel ── */
+.darkmode .ai-tutor-panel {
+  background: #1a1a1a;
+}
+
+.darkmode .ai-panel-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.darkmode .ai-header-text .fw-bold {
+  color: #f1f1f1;
+}
+
+.darkmode .ai-header-text small {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.darkmode .ai-close-btn {
+  color: #ccc !important;
+}
+
+.darkmode .ai-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.darkmode .ai-body {
+  background: #121212;
+}
+
+.darkmode .ai-bubble-msg {
+  background-color: #2a2a2a;
+  color: #e9ecef;
+}
+
+.darkmode .ai-footer {
+  background: #1a1a1a;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Input field in dark mode */
+.darkmode .ai-input {
+  background-color: #2a2a2a !important;
+  color: #e9ecef !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Placeholder readable in dark mode */
+.darkmode .ai-input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.darkmode .ai-note {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+

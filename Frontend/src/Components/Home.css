@@ -1,178 +1,285 @@
-.homeheader {
-  margin-top: 120px;
-  margin-left: 8%;
+/* ═══════════════════════════════════════════════════════════
+   HOME PAGE — Design-system-aligned styles
+   All colors reference design tokens from index.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Utility ────────────────────────────────────────────────── */
+.min-w-0 { min-width: 0; } /* allows flex child to shrink below content size */
+
+/* ── Container ─────────────────────────────────────────────── */
+.home-container {
+  max-width: 1000px;
 }
 
-.homeheaderp {
-  color: rgb(147, 147, 147);
+/* ── Welcome heading ────────────────────────────────────────── */
+.home-welcome-heading {
+  font-weight: 400;
 }
 
-.homeheaderouterdiv {
-  display: flex;
-  flex-direction: row;
-  border: 1px solid rgb(100, 100, 100);
-  margin-right: 8%;
-  margin-top: 50px;
-  align-items: center;
-  padding: 20px;
-  border-radius: 10px;
-  background-color: rgb(240, 240, 240);
+/* Truncate very long names (> 60 chars) with ellipsis */
+.home-username {
+  display: inline-block;
+  max-width: 60ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
-.icond {
-  color: rgb(248, 188, 76);
-  font-size: 27px;
-  margin-right: 13px;
-  margin-bottom: auto;
+/* ── Eyebrow label ("THIS WEEK") ────────────────────────────── */
+.home-eyebrow {
+  font-family: "Times New Roman", Times, serif; /* Match user's preferred serif design */
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  margin-bottom: 0.75rem;
 }
 
-.indiv1 {
-  display: flex;
-  flex-direction: column;
+/* ── Shared muted label ─────────────────────────────────────── */
+.home-label-muted {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+/* Modifiers: chain with base class for correct specificity */
+.home-label-muted.home-label-sm { font-size: 0.875rem; }
+.home-label-muted.home-label-xs { font-size: 0.8rem;   }
+
+/* ── Continue Learning card ─────────────────────────────────── */
+.continue-card {
+  /* Uses existing tokens: --color-accent-muted (rgba orange tint) + --color-surface-subtle */
+  background: linear-gradient(135deg, var(--color-accent-muted) 0%, var(--color-surface-subtle) 100%);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+.continue-card:hover {
+  box-shadow: var(--shadow-md) !important;
 }
 
-.indiv1 p {
-  margin-bottom: 0px;
-  position: relative;
-  top: 0px;
-}
-
-.indiv1p1 {
-  font-size: 18px;
+.continue-card-title {
   font-weight: 500;
+  font-size: 1.2rem;
+  color: var(--color-text);
+}
+.continue-card-subtitle {
+  font-size: 1.05rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0;
 }
 
-.indiv1p2 {
-  color: rgb(127, 127, 127);
+/* Clamp long lesson titles to 2 lines with ellipsis */
+.continue-card-lesson-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2; /* standard property */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
 }
 
-.bar {
-  width: 68%;
-  background-color: #000000;
-  transition: width 0.4s ease-in-out;
+/* Progress bar track */
+.home-progress-track {
+  height: 10px;
+  border-radius: 5px;
+  background-color: rgba(128, 128, 128, 0.2);
 }
 
-.progress {
-  background-color: rgb(214, 213, 213);
-  height: 8px !important;
-  width: 300px;
-  margin-bottom: 10px;
+/* Progress % label */
+.home-progress-pct {
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
-.hdiv2 {
-  margin-top: 25px;
+/* Continue button */
+.home-continue-btn {
+  white-space: nowrap;
+  font-size: 1.05rem;
+  transition: transform 0.18s var(--ease-out-quart, ease),
+              background-color 0.18s ease;
+}
+.home-continue-btn:hover {
+  transform: translateY(-2px);
 }
 
-.hlabel {
-  color: rgb(139, 139, 139);
-  margin-bottom: 10px;
-  font-size: 16px;
+/* Caret icon inside accent button — always white regardless of theme */
+.home-caret-icon {
+  color: #fff;
 }
 
-.label2 {
-  color: rgb(139, 139, 139);
-  margin-left: 200px;
-  font-size: 16px;
+/* Progress bar — accent fill */
+.home-progress-bar {
+  background-color: var(--color-accent);
 }
 
-.labelp {
-  color: rgb(139, 139, 139);
+/* Retry link — inline size + baseline alignment */
+.home-retry-btn {
+  color: var(--color-text-muted);
+  font-size: inherit;
+  vertical-align: baseline;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.home-retry-btn:hover {
+  color: var(--color-accent);
 }
 
-.homebtn {
-  margin-left: auto;
-  padding: 10px;
-  margin-right: 50px;
-  border-radius: 7px;
-  background-color: black;
-  color: white;
-  transition: background-color 1s ease-in-out, transform 1s ease-in-out;
+/* ── Stat icons — use design token colors ───────────────────── */
+.stat-icon {
+  flex-shrink: 0;
+}
+.stat-icon--warning { color: var(--color-warning); }
+.stat-icon--success { color: var(--color-success); }
+.stat-icon--accent  { color: var(--color-accent);  font-size: 1.25rem; }
+
+/* ── Stat value sizes ───────────────────────────────────────── */
+.stat-value-lg {
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  color: var(--color-text);
+  min-width: 60px; /* prevent layout shift */
+}
+.stat-value-md {
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text);
 }
 
-.homebtn:hover {
-  background-color: rgb(70, 70, 70);
-  transform: scale(1.05);
+/* Stat card inner — ensures consistent min-height */
+.stat-card-inner {
+  min-height: 100px;
 }
 
-.bi-caret-right {
-  margin-right: 10px;
+/* ── Skeleton loaders — GPU-composited shimmer ──────────────── */
+/*
+ * Technique: static background on the skeleton block + a ::after overlay
+ * that slides via translateX. Animating transform runs on the compositor
+ * thread — zero repaints, 60fps on low-end devices.
+ */
+
+/* Shared base — static muted fill */
+.stat-skeleton,
+.stat-icon-skel {
+  position: relative;
+  overflow: hidden;
+  /* Static background — no animation here */
+  background: rgba(128, 128, 128, 0.12);
 }
 
-.mainn {
+/* The shimmering highlight — composited translateX */
+.stat-skeleton::after,
+.stat-icon-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent        30%,
+    rgba(255,255,255,0.35) 50%,
+    transparent        70%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes skeleton-shimmer {
+  to { transform: translateX(200%); }
+}
+
+/* Base skeleton block */
+.stat-skeleton {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  width: 48px;
+  height: 1.5rem;
+  vertical-align: middle;
+}
+
+/* Value size variants */
+.stat-skeleton--lg    { width: 80px;  height: 1.75rem; }
+.stat-skeleton--label { width: 64px;  height: 0.8rem;  display: block; margin-bottom: 6px; }
+.stat-skeleton--label + .stat-skeleton { margin-top: 6px; } /* gap after label skeleton */
+
+/* Icon circle placeholder */
+.stat-icon-skel {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.stat-icon-skel--lg { width: 36px; height: 36px; } /* study time icon */
+.stat-icon-skel--md { width: 24px; height: 24px; } /* lessons / streak */
+
+/* ── Stagger — each card shimmers at a different phase ─────── */
+.stats-grid > :nth-child(1) .stat-skeleton::after,
+.stats-grid > :nth-child(1) .stat-icon-skel::after { animation-delay: 0ms;   }
+.stats-grid > :nth-child(2) .stat-skeleton::after,
+.stats-grid > :nth-child(2) .stat-icon-skel::after { animation-delay: 180ms; }
+.stats-grid > :nth-child(3) .stat-skeleton::after,
+.stats-grid > :nth-child(3) .stat-icon-skel::after { animation-delay: 360ms; }
+
+/* ── Reveal — content fades up when real data arrives ─────── */
+@keyframes stat-reveal {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.stat-content {
+  animation: stat-reveal 0.35s var(--ease-out-quart, ease) both;
+}
+/* Stagger the reveal per card column */
+.stats-grid > :nth-child(1) .stat-content { animation-delay: 0ms;   }
+.stats-grid > :nth-child(2) .stat-content { animation-delay: 60ms;  }
+.stats-grid > :nth-child(3) .stat-content { animation-delay: 120ms; }
+
+
+/* ── Cards hover — scoped to home page only ─────────────────── */
+/* NOTE: .card is a Bootstrap utility used app-wide. Scoping to
+   .home-container prevents this rule leaking to other pages. */
+.home-container .card {
+  box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease-in-out;
+}
+.home-container .card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}
+
+/* ── Asymmetric stats grid ──────────────────────────────────── */
+.stats-grid {
+  font-family: "Times New Roman", Times, serif; /* Match user's preferred serif design */
   display: grid;
-  grid-template-rows: 1fr;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 40px;
-  margin-left: 8%;
-  margin-right: 8%;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
 }
 
-.h5 {
-  margin-left: 8%;
-  margin-top: 40px;
+/* Primary metric card — left accent border in brand orange */
+.stats-card-primary {
+  border-left: 4px solid var(--color-accent) !important;
+  border-radius: var(--radius-lg) !important;
 }
 
-.thisweekdiv {
-  display: flex;
-  flex-direction: column;
-  margin-top: 30px;
-  border: 1px solid rgb(214, 213, 213);
-  padding: 15px;
-  border-radius: 8px;
-}
-
-.weekdiv2 {
-  display: flex;
-  flex-direction: row;
-  margin-top: 10px;
-}
-
-.weekp {
-  margin-left: auto;
-}
-
-.c {
-  color: black;
-  font-size: 16px;
-  margin-right: 5px;
-}
-
-/* ✅ Responsive Styles */
-@media (max-width: 480px) {
-  .mainn {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0px;
+/* Tablet: collapse to 1fr + 1fr + 1fr */
+@media (max-width: 991px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
   }
-
-  .thisweekdiv {
-    margin-top: 0px;
-    margin-bottom: 0px;
+  .stats-card-primary {
+    grid-column: 1 / -1;
   }
+}
 
-  .homeheaderouterdiv {
-    width: calc(100% - 20px);
-    margin-left: 0px;
-    margin-right: 20px;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid rgb(100, 100, 100);
-    box-sizing: border-box;
-    flex-direction: column;
-    align-items: flex-start;
+/* Mobile: single column */
+@media (max-width: 575px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
-
-  .progress {
-    width: 90%;
+  .stats-card-primary {
+    grid-column: auto;
   }
-
-  .hlabel {
-    margin-top: 2px;
-    margin-bottom: 0px;
-  }
-
-  .label2 {
-    margin-top: 0px;
-    margin-bottom: 0px;
+  .home-continue-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

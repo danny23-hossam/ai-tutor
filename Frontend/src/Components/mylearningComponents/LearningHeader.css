@@ -1,63 +1,145 @@
+/* ═══════════════════════════════════════════════════════════
+   LearningHeader — sticky bar with back link + title + toggle
+   ═══════════════════════════════════════════════════════════ */
+
 .learning-header {
   background-color: #ffffff;
-  border-bottom: 1px solid #e9ecef;
-  position: fixed;
-  top: 0;
-  z-index: 2000;
-  width: 100%;
+  z-index: 1020 !important;
 }
 
-.back-link-container {
+/* Inner flex row */
+.lh-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  min-height: 52px;
+}
+
+/* ── Back button ──────────────────────────────────────────── */
+.lh-back {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
   cursor: pointer;
-  color: #000;
+  color: #333;
+  font-family: inherit;
+  font-size: 0.875rem;
   font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.back-link-container:hover {
-  color: #ff6900;
+.lh-back:hover {
+  color: var(--color-accent, #ff6900);
+  background: rgba(255, 105, 0, 0.07);
 }
 
-.back-link-container:hover .back-link {
-  color: #ff6900;
+/* ── Vertical divider ─────────────────────────────────────── */
+.lh-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
 }
 
-.lesson-title {
-  font-weight: 600;
-  color: #212529;
-}
-
-.lesson-instructor {
-  font-size: 0.9rem;
-}
-
-.header-divider {
+/* ── Lesson title (fills remaining space) ─────────────────── */
+.lh-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
   margin: 0;
-  border-color: #e9ecef;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.vertical-divider {
-  height: 40px;
-  width: 2px;
-  background-color: rgba(0, 0, 0, 0.1);
+/* ── Dark mode toggle button ──────────────────────────────── */
+.lh-dark-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
-@media (max-width: 768px) {
-  .lesson-title {
-    font-size: 1rem;
+.lh-dark-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #111;
+}
+
+/* ── Bottom border ────────────────────────────────────────── */
+.lh-border {
+  height: 1px;
+  background: #e9ecef;
+}
+
+/* ── Mobile: hide back text label, keep icon ─────────────── */
+@media (max-width: 480px) {
+  .lh-back-text {
+    display: none;
   }
 
-  .lesson-instructor {
-    font-size: 0.85rem;
+  .lh-inner {
+    padding: 8px 14px;
+    gap: 8px;
   }
 
-  .back-link {
+  .lh-title {
     font-size: 0.9rem;
   }
+}
 
-  .text-muted.small {
-    display: none;
-  }
-  .vertical-divider {
-    display: none;
-  }
+/* ══════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════ */
+
+body.darkmode .learning-header {
+  background-color: #111 !important;
+}
+
+body.darkmode .lh-border {
+  background: #2d2d2d;
+}
+
+body.darkmode .lh-back {
+  color: #ccc;
+}
+
+body.darkmode .lh-back:hover {
+  color: #ff6900;
+  background: rgba(255, 105, 0, 0.1);
+}
+
+body.darkmode .lh-divider {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.darkmode .lh-title {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .lh-dark-toggle {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ccc;
+}
+
+body.darkmode .lh-dark-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }

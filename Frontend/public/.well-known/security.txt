@@ -1,0 +1,11 @@
+# ====================================================================
+# PapyrusAI Security Vulnerability Reporting
+# ====================================================================
+
+# If you have found a security vulnerability in our platform, 
+# please report it to the email below so we can fix it promptly.
+
+Contact: mailto:ahmedifraig@gmail.com
+Preferred-Languages: en
+Canonical: https://papyrusai.me/.well-known/security.txt
+Expires: 2027-04-11T00:00:00.000Z

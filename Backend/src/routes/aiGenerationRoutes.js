@@ -8,11 +8,19 @@ const {
     createAiGeneration,
     updateAiGeneration,
     deleteAiGeneration,
+    triggerAiGeneration,
+    getAiGenerationStatus,
 } = require('../controllers/aiGenerationController');
 const { protect } = require('../middleware/authMiddleware');
 
 // All AI generation routes require authentication
 router.use(protect);
+
+// POST /api/ai-generations/trigger   - trigger AI generation (calls FastAPI)
+router.post('/trigger', triggerAiGeneration);
+
+// GET /api/ai-generations/status/:lessonId - check what's generated for a lesson
+router.get('/status/:lessonId', getAiGenerationStatus);
 
 // GET /api/ai-generations            - all generations for logged-in user (supports ?type=summary|quiz|exam)
 router.get('/', getAiGenerations);

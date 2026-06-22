@@ -2,41 +2,53 @@
 
 
 .answerdivc{
-  
     border-radius: 10px;
     margin-top: 20px;
     color: green;
     background-color: white;
 }
+
 .answerdivw{
-    
     border-radius: 10px;
     margin-top: 20px;
     color: red;
     background-color: white;
 }
-.answerbutton{
-width: 30%;
-margin-left: 30%;
-margin-right: 30%;
-border-radius: 20px;
-background-color: black;
-color: white;
-margin-top: 20px;
-padding: 8px;
+
+.answerbutton {
+    display: block;
+    width: 100%;
+    max-width: 220px;
+    margin: 20px auto 0;
+    border-radius: 20px;
+    background-color: black;
+    color: white;
+    padding: 10px;
+    min-height: 44px;
+    border: none;
+    cursor: pointer;
 }
 
 .list-group-item:hover {
- background-color: darkgrey
+    background-color: darkgrey;
+    cursor: pointer;
 }
 
-.clicked{
+.clicked {
     background-color: darkgrey;
 }
-.cardexam{
+
+.cardexam {
     margin-bottom: 30px;
 }
 
-.btns{
-    margin-left: 2%;
+.btns {
+    margin-left: 8px;
 }
+
+/* ── Mobile (≤576px) ──────────────────────────────────────── */
+@media (max-width: 576px) {
+    .answerbutton {
+        max-width: 100%;
+    }
+}

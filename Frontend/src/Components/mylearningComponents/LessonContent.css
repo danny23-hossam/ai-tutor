@@ -1,27 +1,389 @@
-.lesson-tabs{
-    display: flex;
-    justify-content: center;
-    width: 100%;
+/* ═══════════════════════════════════════════════════════════
+   LessonContent — Custom tab system & media container
+   All Bootstrap Nav.tabs removed; custom pill-style tabs.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Root wrapper ─────────────────────────────────────────── */
+.lesson-content-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.lesson-tabs .nav-item {
-    width: 25%;
-    text-align: center;
-    height:40px;
-    background-color: #fff !important;
+/* ── Page title (replaces bare <h5>) ─────────────────────── */
+.lc-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text, #1a1a1a);
+  margin: 0 0 14px 0;
+  line-height: 1.4;
 }
 
-.lesson-tabs .nav-link {
-  color: rgba(0,0,0,0.7) !important;
+/* ── Media container ──────────────────────────────────────── */
+.lc-media-wrap {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* ── Tab navigation bar ────────────────────────────────────── */
+.lc-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: var(--color-surface-subtle, rgba(0, 0, 0, 0.05));
+  border-radius: 12px;
+  padding: 5px;
+  margin-bottom: 20px;
+}
+
+/* ── Individual tab button ──────────────────────────────────── */
+.lc-tab {
+  padding: 9px 8px;
+  font-size: 0.875rem;
   font-weight: 500;
-  height: 40px;
+  font-family: inherit;
+  color: var(--color-text-muted, #555);
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1.2;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.lc-tab:hover {
+  background: var(--color-surface, rgba(255, 255, 255, 0.7));
+  color: var(--color-text, #222);
+}
+
+/* Instant visual feedback on touch — fires before JS state update */
+.lc-tab:active {
+  background: var(--color-surface, rgba(255, 255, 255, 0.9));
+  color: var(--color-accent, #ff6900);
+}
+
+.lc-tab--active,
+.lc-tab--active:hover,
+.lc-tab--active:active {
+  background: var(--color-surface, #ffffff);
+  color: var(--color-accent, #ff6900) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+/* Suppress focus ring for mouse; preserve for keyboard */
+.lc-tab:focus:not(:focus-visible) {
+  outline: none;
+}
+.lc-tab:focus-visible {
+  outline: 2px solid var(--color-accent, #ff6900);
+  outline-offset: 2px;
+}
+
+/* ── Tab panels ─────────────────────────────────────────────── */
+.lc-panel-wrap {
+  min-height: 120px;
+}
+
+.lc-panel--hidden {
+  display: none;
+}
+
+.lc-panel--active {
+  display: block;
+  animation: lc-fade-in 0.22s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@keyframes lc-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-panel--active { animation: none; }
+}
+
+/* ── Section label (replaces <strong>) ─────────────────────── */
+.lc-section-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #888);
+  margin: 0 0 12px 0;
+}
+
+/* ── Summary body (dangerouslySetInnerHTML) ─────────────────── */
+.lc-summary-body {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--color-text, #1a1a1a);
+}
+
+.lc-summary-body h1, .lc-summary-body h2, .lc-summary-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 16px;
+  margin-bottom: 6px;
+}
+
+.lc-summary-body p {
+  margin-bottom: 10px;
+}
+
+.lc-summary-body ul, .lc-summary-body ol {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+/* ── Loading state ──────────────────────────────────────────── */
+.lc-loading {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+  color: var(--color-text-muted, #888);
+  font-size: 0.875rem;
+  padding: 16px 0;
 }
 
+.lc-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(128, 128, 128, 0.2);
+  border-top-color: var(--color-accent, #ff6900);
+  border-radius: 50%;
+  animation: lc-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
 
-.lesson-tabs .nav-link.active {
-  background-color: #ff6900 !important;
-  color: #fff !important;
+@keyframes lc-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Empty state ────────────────────────────────────────────── */
+.lc-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--color-text-muted, #888);
+  gap: 6px;
+}
+
+.lc-empty-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.lc-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.lc-empty-sub {
+  font-size: 0.8rem !important;
+  color: var(--color-text-muted, #aaa);
+  opacity: 0.8;
+}
+
+/* ── Mobile: tighten up ──────────────────────────────────────── */
+@media (max-width: 576px) {
+  .lc-tab {
+    font-size: 0.8rem;
+    padding: 8px 4px;
+  }
+
+  .lc-title {
+    font-size: 1rem;
+  }
+
+  .lc-tabs {
+    gap: 4px;
+    padding: 4px;
+  }
+}
+
+/* ── Section header (label + action buttons) ──────────────────── */
+.lc-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.lc-section-header .lc-section-label {
+  margin: 0;
+}
+
+/* ── Generate / Regenerate button ─────────────────────────────── */
+.lc-generate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-accent, #ff6900);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
+}
+
+.lc-generate-btn:hover:not(:disabled) {
+  filter: brightness(0.88);
+  transform: translateY(-1px);
+}
+
+.lc-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lc-generate-btn--small {
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-accent, #ff6900);
+  border: 1px solid var(--color-accent, #ff6900);
+}
+
+.lc-generate-btn--small:hover:not(:disabled) {
+  background: var(--color-accent, #ff6900);
+  color: #fff;
+}
+
+/* ── Quiz generate text link ──────────────────────────────────── */
+.quiz-cta-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.quiz-generate-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-accent, #ff6900);
+  background: none;
+  border: 1.5px solid var(--color-accent, #ff6900);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.quiz-generate-link:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.quiz-generate-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Dark mode adjustments ────────────────────────────────────── */
+/* Tab bar */
+body.darkmode .lc-tabs {
+  background: rgba(255, 255, 255, 0.06);
+}
+body.darkmode .lc-tab {
+  color: var(--color-text-muted);
+}
+body.darkmode .lc-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+body.darkmode .lc-tab--active {
+  background: var(--color-surface, #2a2a2a);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Spinner track */
+body.darkmode .lc-spinner {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Small generate button outline */
+body.darkmode .lc-generate-btn--small {
+  color: #ff8533;
+  border-color: #ff8533;
+}
+
+body.darkmode .quiz-generate-link {
+  color: #ff8533;
+  border-color: #ff8533;
+}
+
+/* ── Inline error toast ────────────────────────────────────── */
+.lc-error-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  color: var(--color-error);
+  animation: lc-toast-in 0.3s ease-out;
+}
+
+@keyframes lc-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lc-error-toast__icon {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.lc-error-toast__msg {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.lc-error-toast__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--color-error);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.lc-error-toast__close:hover {
+  background: rgba(153, 27, 27, 0.1);
+}
+
+/* Dark mode toast */
+body.darkmode .lc-error-toast {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
+}
+
+body.darkmode .lc-error-toast__close {
+  color: #fca5a5;
+}
+
+body.darkmode .lc-error-toast__close:hover {
+  background: rgba(252, 165, 165, 0.12);
 }

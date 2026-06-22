@@ -1,7 +1,362 @@
-.video-placeholder {
-    height: 550px;
-    display: flex; 
+/*
+  VideoPlayer CSS
+  ===============
+  Native HTML5 video with proper loading states, fallback UI, and 
+  responsive sizing. The .vp-wrap is a visual shell only — the
+  <video> element controls its own height via aspect-ratio.
+*/
+
+/* ── Outer shell ──────────────────────────────────────────────── */
+.vp-wrap {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: 14px;
+  /* overflow:hidden clips Drive's leaking chrome (white strip at bottom)
+     and prevents black corner gaps from border-radius on the iframe */
+  overflow: hidden;
+  line-height: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 600px) {
+  .vp-wrap {
+    /* Keep overflow:hidden on mobile too — prevents the white strip leak.
+       The extra iframe height below gives Drive enough room so nothing
+       needs to overflow. */
+    border-radius: 10px;
+  }
+}
+
+/* ── Native <video> — fluid 16:9 with mobile floor ─────────── */
+.vp-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  max-height: 70vh;
+  object-fit: contain;
+  background: #000;
+  border-radius: inherit;
+  transition: opacity 0.3s ease;
+}
+
+/* When using native <video>, DON'T clip overflow — otherwise Chrome
+   adds a secondary thin progress bar when its controls get clipped */
+.vp-wrap--native {
+  overflow: visible;
+}
+
+@media (max-width: 768px) {
+  .vp-wrap--native .vp-video {
+    max-height: none; /* parent scrolls, so no cap needed */
+    border-radius: 10px;
+  }
+}
+
+/* ── Embedded iframe — YouTube (uses direct sizing) ─────────── */
+.vp-iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 340px;
+  max-height: 70vh;
+  border: none;
+  border-radius: inherit;
+  background: #000;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 600px) {
+  .vp-iframe {
+    aspect-ratio: unset;
+    height: max(300px, 56.25vw);
+    min-height: 300px;
+    max-height: none;
+    border-radius: inherit;
+  }
+}
+
+
+
+
+/* ── Loading overlay inside the player ────────────────────── */
+.vp-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 14px;
+  z-index: 1;
+}
+
+.vp-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ff6900;
+  border-radius: 50%;
+  animation: vp-spin 0.7s linear infinite;
+}
+
+@keyframes vp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── External-link overlay (top-right corner) ──────────────── */
+.vp-external-link {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+  line-height: 1;
+}
+.vp-wrap:hover .vp-external-link,
+.vp-wrap:focus-within .vp-external-link {
+  opacity: 1;
+}
+
+/* ── Shared state box (placeholder + error + generating) ─────── */
+.vp-state {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  /* Tighter padding so content can never exceed the box */
+  padding: 20px 16px;
+  border-radius: 14px;
+  box-sizing: border-box;
+  /* Clip anything (icon, button) that exceeds the box */
+  overflow: hidden;
+}
+
+/* ── Placeholder variant ──────────────────────────────────── */
+.vp-placeholder {
+  background: linear-gradient(145deg, #141414, #1a1a1a);
+  color: #7a7a7a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Error variant ──────────────────────────────────────────── */
+.vp-error {
+  background: linear-gradient(145deg, #100808, #140c0c);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  color: #ccc;
+}
+
+/* ── Generating / processing variant ───────────────────────── */
+.vp-generating {
+  background: linear-gradient(145deg, #0a0e18, #0d1220);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #ccc;
+}
+
+/* ── Icon wrapper ──────────────────────────────────────────── */
+.vp-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.vp-icon-wrap--error {
+  background: rgba(220, 53, 69, 0.12);
+  color: #e07070;
+}
+
+.vp-icon-wrap--generating {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  /* The wrapper itself pulses (opacity) */
+  animation: vp-pulse 2s ease-in-out infinite;
+}
+
+/* Spin the SVG icon INSIDE the generating wrapper */
+.vp-icon-wrap--generating svg {
+  animation: vp-spin 1.5s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes vp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Placeholder icon gets accent glow */
+.vp-placeholder .vp-icon-wrap {
+  background: rgba(255, 105, 0, 0.1);
+  color: #ff8c42;
+}
+
+/* Small spinner (used inside generating icon) */
+.vp-spinner--sm {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #818cf8;
+  border-radius: 50%;
+  animation: vp-spin 0.8s linear infinite;
+}
+
+/* ── Typography ───────────────────────────────────────────── */
+.vp-label {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #e0e0e0;
+  line-height: 1.4;
+}
+
+.vp-sub {
+  font-size: 0.82rem;
+  margin: 0;
+  color: #555;
+  max-width: 260px;
+  line-height: 1.6;
+}
+
+/* ── Error action buttons ───────────────────────────────────── */
+.vp-error-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (min-width: 480px) {
+  .vp-error-actions {
+    flex-direction: row;
     justify-content: center;
-    align-items: center;
-    color: #ccc;
+  }
+}
+
+.vp-watch-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 20px;
+  background: rgba(255, 105, 0, 0.14);
+  color: #ff8c42;
+  border: 1px solid rgba(255, 105, 0, 0.35);
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+.vp-watch-btn:hover {
+  background: rgba(255, 105, 0, 0.26);
+  color: #ff8c42;
+  transform: translateY(-1px);
+}
+
+.vp-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.vp-retry-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #bbb;
+}
+.vp-retry-btn:focus-visible {
+  outline: 2px solid #ff6900;
+  outline-offset: 3px;
+}
+
+/* Accent variant for generating state */
+.vp-retry-btn--accent {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+.vp-retry-btn--accent:hover {
+  background: rgba(99, 102, 241, 0.22);
+  color: #a5b4fc;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .vp-spinner { animation: none; }
+  .vp-video { transition: none; }
+  .vp-watch-btn:hover { transform: none; }
+}
+
+/* ── Desktop: larger state boxes, bigger text & icons ────────
+   Mobile keeps the compact sizes defined above.
+   Everything below only applies on screens ≥ 769px.         */
+@media (min-width: 769px) {
+  .vp-state {
+    padding: 40px 36px;
+    gap: 16px;
+  }
+
+  .vp-icon-wrap {
+    width: 88px;
+    height: 88px;
+    min-width: 88px;
+  }
+
+  /* Bigger SVG icons inside the wrapper */
+  .vp-icon-wrap svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .vp-label {
+    font-size: 1.25rem;
+  }
+
+  .vp-sub {
+    font-size: 0.95rem;
+    max-width: 380px;
+  }
+
+  .vp-watch-btn,
+  .vp-retry-btn {
+    padding: 11px 28px;
+    font-size: 0.95rem;
+    border-radius: 12px;
+  }
+
+  .vp-error-actions {
+    gap: 14px;
+    margin-top: 6px;
+  }
 }

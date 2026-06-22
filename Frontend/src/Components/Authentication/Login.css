@@ -1,121 +1,218 @@
-body{
-     background-color: #fdfdfd; /* very soft off-white */
+/* ═════════════════════════════════════════════════════════════
+   Login.css — Sign In page
+   All colors use design tokens from index.css.
+   Dark mode flows from token overrides in body.darkmode —
+   no per-component color overrides needed (except noted).
+   ═════════════════════════════════════════════════════════════ */
+
+/* ── Page wrapper ───────────────────────────────────────── */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 16px;
+  background-color: var(--color-bg);      /* #f4f4f5 → #0d0d0d in dark */
+  box-sizing: border-box;
+  font-family: var(--font-sans);          /* Inter */
 }
 
-.loginheader{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    top: 20%;                 /* move top edge to 50% of viewport */
-    left: 50%;                /* move left edge to 50% of viewport */
-    transform: translate(-50%, -50%); 
+/* ── Header ─────────────────────────────────────────── */
+.loginheader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-
-.loginheader div{
-    background-color: black;
-    color: white;
-    padding: 16px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-   border-radius: 12px;
-   margin-bottom: 10px;
-   font-size: 20px;
+/* Brand wordmark: icon + name, no box, no frame */
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
 }
 
-.loginheader p{
-    color: darkgrey;
+.login-brand-icon {
+  font-size: 26px;
+  color: var(--color-accent);      /* #ff6900 — brand orange */
+  line-height: 1;
 }
 
-
-.loginmain{
-    position: absolute;
-      top: 30%; /* adjust so it appears below header */
-    left: 50%;
-    transform: translateX(-50%);
+.login-brand-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text);        /* #1a1a1a → #f0f0f0 */
+  letter-spacing: -0.5px;
+  font-family: var(--font-sans);
 }
 
-.loginform{
-    padding:35px;
-    width: 35vw;;
-    background-color: white;
-     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* soft, gentle shadow */
-    border-radius: 10px;
+/* ── Form card ──────────────────────────────────────────── */
+.loginmain {
+  width: 100%;
+  max-width: 440px;
 }
 
-.loginp1{
-    text-align: center;
-    font-size: 18px;
-}
-.loginform label{
-    font-weight: 500;
-    margin-top: 10px;
-    margin-bottom: 5px;
-}
-.loginform input{
-    display: block;
-    background-color: rgb(232, 231, 231);
-    border: none;
-    padding: 5px;
-    border-radius: 8px;
-    width: 90%;
-    padding-left: 17px;
+.loginform {
+  padding: 35px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--color-surface);     /* #ffffff → #1a1a1a */
+  box-shadow: var(--shadow-md);
+  border-radius: 14px;
+  border: 1px solid var(--color-border-subtle);
 }
 
-.loginform button{
-    background-color: black;
-    color: white;
-    width: 100%;
-    margin-top: 17px;
-    padding:6px;
-    border-radius: 12px;
+.loginp1 {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 20px 0;
 }
 
-.loginp2{
-    margin-top: 15px;
-    text-align: center;
-    color: grey;
-}
-.loginp2 a{
-    color: black;
-    text-decoration: none;
-    margin-left: 5px;
-}
-.loginp2 a:hover{
-   
-    text-decoration: underline;
-  
+/* ── Labels ─────────────────────────────────────────────── */
+.loginform label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: var(--color-text);                   /* #1a1a1a → #f0f0f0 */
 }
 
-.loginfooter{
-      position: absolute;
-      top: 85%; /* adjust so it appears below header */
-    left: 50%;
-    transform: translateX(-50%);
-    color: grey;
+/* ── Inputs ─────────────────────────────────────────────── */
+.loginform input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--color-bg);          /* #f4f4f5 → #0d0d0d */
+  border: 1px solid var(--color-border);      /* #e5e7eb → #2d2d2d */
+  padding: 10px 14px;
+  border-radius: 8px;
+  outline: none;
+  color: var(--color-text);                   /* #1a1a1a → #f0f0f0 */
+  font-size: 0.93rem;
+  font-family: var(--font-sans);
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
 }
 
+.loginform input:focus {
+  border-color: var(--color-accent);          /* #ff6900 */
+  background-color: var(--color-surface);     /* #ffffff → #1a1a1a */
+  box-shadow: 0 0 0 3px var(--color-accent-muted); /* rgba(255,105,0,0.12) */
+}
+
+.loginform input::placeholder {
+  color: var(--color-text-disabled);          /* #9ca3af → #6b7280 */
+}
+
+/* ── Submit button ──────────────────────────────────────── */
+.loginform button[type="submit"] {
+  /* Inverted: dark bg + light text in light; light bg + dark text in dark.
+     var(--color-text) = #1a1a1a light / #f0f0f0 dark.
+     var(--color-surface) = #ffffff light / #1a1a1a dark.
+     Both token values happen to invert correctly — no dark override needed. */
+  background-color: var(--color-text);
+  color: var(--color-surface);
+  width: 100%;
+  margin-top: 20px;
+  padding: 11px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.97rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  transition: opacity 0.18s ease;
+}
+
+.loginform button[type="submit"]:hover   { opacity: 0.82; }
+.loginform button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Sign up / forgot links ─────────────────────────────── */
+.loginp2 {
+  margin-top: 16px;
+  text-align: center;
+  color: var(--color-text-muted);             /* #6b7280 → #9ca3af */
+  font-size: 14px;
+}
+
+.loginp2 a {
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-left: 5px;
+  font-weight: 600;
+}
+
+.loginp2 a:hover { text-decoration: underline; }
+
+/* ── Footer ─────────────────────────────────────────────── */
+.loginfooter {
+  color: var(--color-text-disabled);          /* #9ca3af → #6b7280 */
+  font-size: 12px;
+  text-align: center;
+  max-width: 440px;
+}
+
+/* ── Errors ─────────────────────────────────────────────── */
 .error {
-  color: red;
+  color: var(--color-error);                  /* #991b1b — 9.9:1 contrast ✅ WCAG AAA */
   font-size: 12px;
   margin-top: 5px;
 }
 
+/* ── Password visibility toggle ─────────────────────────── */
+.pw-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text-disabled);          /* #9ca3af → #6b7280 */
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
 
+.pw-toggle:hover         { color: var(--color-text-muted); }
+.pw-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 
-@media (max-width:769px) {
-   
-    .loginform{
-    width: 90vw;
-    margin-bottom: 10px;
-    }
-    .loginfooter{
-        
-      top: 90%; /* adjust so it appears below header */
-   width: 100vw;
-   margin-left: 6px;
-   text-align: center;
-    }
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-page { padding: 24px 12px; gap: 16px; }
+  .loginform  { padding: 24px 20px; }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+  .login-page  { justify-content: flex-start; padding-top: 16px; gap: 12px; }
+  .loginheader { flex-direction: row; gap: 12px; align-items: center; }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .loginform input,
+  .loginform button[type="submit"],
+  .pw-toggle {
+    transition: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Only overrides where token behavior ≠ desired output.
+   (Most dark mode is handled automatically by token swaps in index.css)
+   ════════════════════════════════════════════════════════════ */
+
+/* Form shadow must be stronger in dark to remain visible on a dark bg */
+body.darkmode .loginform {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
 }

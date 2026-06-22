@@ -1,0 +1,16 @@
+{
+  "serverInfo": {
+    "name": "PapyrusAI Server",
+    "version": "1.0.0",
+    "description": "AI-powered tutoring platform backend"
+  },
+  "transport": {
+    "type": "sse",
+    "endpoint": "/api/mcp/sse"
+  },
+  "capabilities": {
+    "tools": {},
+    "prompts": {},
+    "resources": {}
+  }
+}

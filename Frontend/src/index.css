@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════════════════════════
+   AI TUTOR — Design Token System
+   Brand: Motivated · Energetic · Focused
+   Reference: NotebookLM aesthetic
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand Colors ──────────────────────────────────────── */
+  --color-accent:        #ff6900;    /* Primary orange — CTAs, active, AI highlights */
+  --color-accent-hover:  #e05e00;    /* Pressed / hover state */
+  --color-accent-muted:  rgba(255, 105, 0, 0.12); /* Soft tint for bg highlights */
+  --color-accent-ring:   rgba(255, 105, 0, 0.35); /* Focus ring / resting shadow */
+  --color-accent-ring-strong: rgba(255, 105, 0, 0.45); /* Hover shadow */
+
+  /* ── Neutrals ──────────────────────────────────────────── */
+  --color-bg:            #f4f4f5;    /* Page background */
+  --color-surface:       #ffffff;    /* Cards, panels */
+  --color-surface-subtle:#fafafa;    /* Chat body, subtle containers */
+  --color-border:        #e5e7eb;    /* Dividers, card borders */
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+
+  /* ── Text ──────────────────────────────────────────────── */
+  --color-text:          #1a1a1a;    /* Primary text */
+  --color-text-muted:    #6b7280;    /* Secondary / helper text */
+  --color-text-disabled: #9ca3af;    /* Disabled states */
+
+  /* ── Semantic States ───────────────────────────────────── */
+  --color-success:       #22c55e;
+  --color-error:         #991b1b;    /* Error text — deep red, AA contrast on light */
+  --color-error-bg:      #fef2f2;    /* Error surface background */
+  --color-error-border:  #fecaca;    /* Error surface border */
+  --color-warning:       #f59e0b;
+
+  /* ── Typography ────────────────────────────────────────── */
+  --font-sans:   'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Spacing Scale ─────────────────────────────────────── */
+  --space-xs:    4px;
+  --space-sm:    8px;
+  --space-md:    16px;
+  --space-lg:    24px;
+  --space-xl:    40px;
+  --space-2xl:   64px;
+
+  /* ── Border Radius ─────────────────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ───────────────────────────────────────────── */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.12);
+  --shadow-xl:   0 24px 80px rgba(0,0,0,0.18);
+
+  /* ── Easing Curves ─────────────────────────────────────── */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Z-Index Scale ─────────────────────────────────────── */
+  --z-dropdown:   100;
+  --z-sticky:     200;
+  --z-backdrop:   900;
+  --z-sidebar:    1000;
+  --z-modal:      1050;
+  --z-panel:      1002;   /* AI Tutor panel */
+  --z-float:      3000;   /* Floating buttons */
+  --z-toast:      9000;
+  --z-tooltip:    9500;
+}
+
+/* ── Dark Mode Token Overrides ─────────────────────────────
+   All dark mode behavior flows from swapping these tokens.
+   ─────────────────────────────────────────────────────── */
+body.darkmode {
+  --color-bg:            #0d0d0d;
+  --color-surface:       #1a1a1a;
+  --color-surface-subtle:#111111;
+  --color-border:        #2d2d2d;
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-text:          #f0f0f0;
+  --color-text-muted:    #9ca3af;
+  --color-text-disabled: #6b7280;
+}
+
+/* ── Global Base ───────────────────────────────────────────*/
+body {
+  font-family: var(--font-sans);
+}
+
+/* ── Global Reduced Motion ─────────────────────────────────
+   Belt + suspenders: individual components also declare this,
+   but this global rule ensures any future animation respects it.
+   ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

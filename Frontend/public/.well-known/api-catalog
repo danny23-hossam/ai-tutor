@@ -1,0 +1,25 @@
+{
+  "linkset": [
+    {
+      "anchor": "/api",
+      "service-desc": [
+        {
+          "href": "/api/openapi.json",
+          "type": "application/vnd.oai.openapi+json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "/agent-docs.md",
+          "type": "text/markdown"
+        }
+      ],
+      "status": [
+        {
+          "href": "/api/health",
+          "type": "application/json"
+        }
+      ]
+    }
+  ]
+}

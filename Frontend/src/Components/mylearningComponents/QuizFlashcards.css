@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════
+   QuizFlashcards — Full-page flashcard quiz UI
+   Owns styles for QuizFlashcards.jsx only.
+   Token system: index.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Page root ─────────────────────────────────────────────── */
+.qf-root {
+  background: var(--color-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  gap: 16px;
+}
+
+/* ── Flashcard card ────────────────────────────────────────── */
+.qf-card {
+  display: flex;
+  flex-direction: column;
+  width: clamp(300px, 90vw, 640px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  cursor: pointer;
+}
+
+.qf-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qf-card, .qf-card:hover { transition: none; transform: none; }
+}
+
+/* ── Card header row (icon + label) ────────────────────────── */
+.qf-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Icon container */
+.qf-icon-wrap {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.qf-icon-wrap .bi { color: var(--color-accent); }
+
+/* Section label (QUESTION / ANSWER / COMMON MISTAKES) */
+.qf-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+/* ── Question text ─────────────────────────────────────────── */
+.qf-question {
+  font-size: clamp(1rem, 3.5vw, 1.3rem);
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+  color: var(--color-text);
+  margin: 0 0 16px 0;
+}
+
+/* ── Navigation buttons ────────────────────────────────────── */
+.qf-btn-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.qf-nav-btn {
+  min-height: 44px; /* WCAG touch target */
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.qf-nav-btn:hover {
+  background: var(--color-border);
+}
+
+/* ── Answer / explanation section ─────────────────────────── */
+.qf-answer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.qf-answer-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0 0 4px 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--color-success);
+  word-break: break-word;
+}
+
+.qf-mistake-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0 0 4px 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--color-error);
+  word-break: break-word;
+}
+
+/* ── Return button ────────────────────────────────────────── */
+.qf-return-btn {
+  min-height: 44px;
+  padding: 10px 28px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  margin-top: 4px;
+}
+
+.qf-return-btn:hover {
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+}
+
+.qf-return-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .qf-root {
+    padding: 32px 12px;
+    justify-content: flex-start;
+  }
+  .qf-card {
+    padding: 16px 14px;
+  }
+  .qf-btn-row {
+    flex-direction: column;
+  }
+  .qf-nav-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

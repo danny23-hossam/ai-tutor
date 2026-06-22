@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+
+# Private authenticated routes
+Disallow: /home
+Disallow: /mylearning
+Disallow: /lesson
+Disallow: /reminder
+Disallow: /profile
+Disallow: /examstart
+Disallow: /flashcardquiz
+
+Sitemap: https://papyrusai.me/sitemap.xml

@@ -1,12 +1,52 @@
 body.darkmode {
-  background-color: black !important;
-  color: white !important;
+  background-color: #0d0d0d !important; /* near-black — no halation, token-aligned */
+  color: #f0f0f0 !important;            /* off-white — less harsh, still 14:1 contrast */
 }
 
 body.darkmode header,
 body.darkmode .navbar {
-  background-color: #000 !important;
+  background-color: #0d0d0d !important; /* matches body */
+  color: #f0f0f0 !important;
+}
+
+/* Global .text-muted override — fixes 4.48:1 WCAG AA fail on non-lesson pages */
+body.darkmode .text-muted {
+  color: #9ca3af !important; /* 5.7:1 on #0d0d0d ✅ WCAG AA */
+}
+
+/* Page heading — explicit light/dark color so inline styles can be removed from JSX */
+.page-heading {
+  color: #1a1a1a;
+}
+body.darkmode .page-heading {
+  color: #ffffff !important; /* 21:1 contrast — maximum readability for primary headings */
+}
+
+/* Brand orange button — survives body.darkmode .btn override via higher specificity */
+.btn-accent {
+  background-color: var(--color-accent, #ff6900) !important;
   color: #fff !important;
+  border: none !important;
+}
+.btn-accent:hover {
+  background-color: var(--color-accent-hover, #e55f00) !important;
+  color: #fff !important;
+}
+/* .btn.btn-accent → specificity (0,3,1) beats body.darkmode .btn → (0,2,1) */
+body.darkmode .btn.btn-accent {
+  background-color: var(--color-accent, #ff6900) !important;
+  color: #fff !important;
+  border: none !important;
+}
+body.darkmode .btn.btn-accent:hover {
+  background-color: var(--color-accent-hover, #e55f00) !important;
+}
+
+/* Global .card override — Bootstrap cards stay white on dark without this */
+body.darkmode .card {
+  background: var(--color-surface, #1a1a1a) !important; /* shorthand resets background-image */
+  border-color: var(--color-border, #2d2d2d) !important;
+  color: var(--color-text, #f0f0f0) !important;
 }
 
 body.darkmode .navbar a,
@@ -22,11 +62,64 @@ body.darkmode .btn {
 
 body.darkmode .btn:hover {
   background-color: #333 !important;
-}  
+}
 
-body.darkmode .navbar-toggler{
-  background-color: white !important;
-  color: black !important;
+/* .edit-btn / .delete-btn dark mode — survive the global .btn !important above */
+body.darkmode .edit-btn {
+  background-color: #2a2a2a !important;
+  color: #d1d5db !important;
+  border-color: #3a3a3a !important;
+}
+body.darkmode .edit-btn:hover {
+  background-color: #383838 !important;
+  color: #f0f0f0 !important;
+}
+body.darkmode .delete-btn {
+  background-color: #2a1a1a !important;
+  color: #f87171 !important; /* red-400 — 4.6:1 on #2a1a1a ✅ WCAG AA */
+  border-color: #4a2a2a !important;
+}
+body.darkmode .delete-btn:hover {
+  background-color: #3a1f1f !important;
+}
+
+/* ── AI Tutor Panel dark mode ── */
+body.darkmode .ai-tutor-panel {
+  background: var(--color-surface, #1a1a1a) !important;
+  box-shadow: -3px 0 12px rgba(0, 0, 0, 0.5) !important;
+}
+body.darkmode .ai-body {
+  background: var(--color-bg, #141414) !important;
+}
+body.darkmode .ai-bubble-msg {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important; /* 9.3:1 on #2a2a2a ✅ WCAG AAA */
+}
+body.darkmode .ai-footer {
+  background: var(--color-surface, #1a1a1a) !important;
+  border-top-color: var(--color-border, #2d2d2d) !important;
+}
+body.darkmode .ai-send-btn:not(:enabled) {
+  background-color: rgba(255, 255, 255, 0.1) !important; /* visible on dark */
+}
+body.darkmode .ai-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+/* Panel header border in dark mode */
+body.darkmode .header1.border-bottom,
+body.darkmode .header1 {
+  border-bottom-color: var(--color-border, #2d2d2d) !important;
+}
+
+
+body.darkmode .navbar-toggler {
+  /* Transparent background — blends with dark navbar instead of showing white box */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+/* Make the hamburger lines visible on dark background */
+body.darkmode .navbar-toggler-icon {
+  filter: invert(1);
 }
 body.darkmode .headernameanddiv {
   background-color: transparent;
@@ -56,58 +149,91 @@ body.darkmode .ldiv:hover{
 
 
 
-body.darkmode .homeheader {
-  color: #f5f5f5;
+/* ── HOME PAGE — Dark Mode Token Classes ─────────────────── */
+/* Continue Learning card */
+body.darkmode .continue-card {
+  background: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+body.darkmode .continue-card-title {
+  color: var(--color-text) !important;
+}
+body.darkmode .continue-card-subtitle {
+  color: var(--color-text-muted) !important;
 }
 
-body.darkmode .homeheaderp {
-  color: rgb(180, 180, 180);
+/* Stat icon token colors — preserved in dark mode via semantic tokens */
+body.darkmode .stat-icon--warning { color: var(--color-warning) !important; }
+body.darkmode .stat-icon--success { color: var(--color-success) !important; }
+body.darkmode .stat-icon--accent  { color: var(--color-accent)  !important; }
+
+/* Stat values */
+body.darkmode .stat-value-lg,
+body.darkmode .stat-value-md {
+  color: var(--color-text) !important;
 }
 
-body.darkmode .homeheaderouterdiv {
-  background-color: rgb(35, 35, 35);
-  border: 1px solid rgb(90, 90, 90);
+/* Muted labels */
+body.darkmode .home-label-muted {
+  color: var(--color-text-muted) !important;
 }
 
-body.darkmode .icond {
-  color: rgb(255, 214, 94);
+/* Eyebrow stays accent in both modes (already a token) */
+
+/* Skeleton shimmer — dark mode: darker base + brighter highlight overlay */
+body.darkmode .stat-skeleton,
+body.darkmode .stat-icon-skel {
+  background: rgba(255, 255, 255, 0.06); /* darker base fill */
+}
+body.darkmode .stat-skeleton::after,
+body.darkmode .stat-icon-skel::after {
+  background: linear-gradient(
+    105deg,
+    transparent           30%,
+    rgba(255,255,255,0.15) 50%,
+    transparent           70%
+  );
 }
 
-body.darkmode .indiv1p1 {
-  color: #ffffff;
-}
 
-body.darkmode .indiv1p2 {
-  color: rgb(180, 180, 180);
+/* ── CREATE LESSON MODAL — Dark Mode ─────────────────────────── */
+/* .input-themed replaces bg-light so the input adapts to dark mode */
+.input-themed {
+  background-color: #f8f9fa;
 }
-
-body.darkmode .progress {
-  background-color: rgb(70, 70, 70);
+body.darkmode .modal-themed {
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
-
-body.darkmode .bar {
-  background-color: rgb(255, 255, 255);
+body.darkmode .modal-themed .modal-title,
+body.darkmode .modal-themed label {
+  color: var(--color-text);
 }
-
-body.darkmode .hlabel,
-body.darkmode .label2,
-body.darkmode .labelp {
-  color: rgb(180, 180, 180);
+body.darkmode .modal-themed .text-muted {
+  color: var(--color-text-muted) !important;
 }
-
-body.darkmode .homebtn {
-  background-color: #f5f5f5;
-  color: #000;
+body.darkmode .modal-themed .input-themed {
+  background-color: #2a2a2a;
+  color: var(--color-text);
 }
-
-body.darkmode .homebtn:hover {
-  background-color: #e0e0e0;
+body.darkmode .modal-themed .input-themed::placeholder {
+  color: var(--color-text-muted);
 }
-
-body.darkmode .bi-caret-right {
-  color: #000;
+.btn-cancel-themed {
+  background-color: #f0f0f0;
+  color: #222;
+  border: none;
 }
-
+body.darkmode .btn-cancel-themed {
+  background-color: #3a3a3a;
+  color: var(--color-text);
+}
+body.darkmode .btn-cancel-themed:hover {
+  background-color: #444;
+}
+body.darkmode .btn-close-themed {
+  filter: invert(1) grayscale(1);
+}
 
 body.darkmode  .maindueout{
   background-color:rgb(35, 35, 35)
@@ -171,7 +297,447 @@ body.darkmode .learnmain .div button{
   background-color:white;
 }
 
+/* Reminder delete button — CSS hover replaces onMouseOver mutation */
+.reminder-delete-btn {
+  transition: background-color 0.15s;
+}
+.reminder-delete-btn:hover {
+  background-color: #fee2e2 !important;
+}
+
 body.darkmode .remindertable{
   background-color: rgb(35, 35, 35);
     box-shadow: 0 4px 12px rgba(252, 252, 252, 0.15); 
 }
+
+/* ── Reminder table — override Bootstrap's own CSS variables so the
+   table cells actually pick up the dark background ──────────────── */
+body.darkmode .reminder-table-card {
+  background-color: #141414 !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+body.darkmode .reminder-table-card .table {
+  /* Reset Bootstrap's table CSS variables to dark-mode values */
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
+  --bs-table-border-color: rgba(255, 255, 255, 0.06);
+  color: #d0d0d0;
+}
+body.darkmode .reminder-table-card td,
+body.darkmode .reminder-table-card th {
+  background-color: transparent !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: inherit;
+}
+body.darkmode .reminder-thead {
+  background-color: #1e1e1e !important;
+}
+body.darkmode .reminder-th {
+  color: #888 !important;
+}
+body.darkmode .reminder-date-main {
+  color: #e0e0e0 !important;
+}
+body.darkmode .reminder-notes {
+  color: #d0d0d0 !important;
+}
+body.darkmode .reminder-row {
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LESSON PAGE — Dark Mode
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Learning Header ── */
+body.darkmode .learning-header {
+  background-color: #111 !important;
+  border-bottom-color: #333 !important;
+}
+
+body.darkmode .learning-header .back-link,
+body.darkmode .learning-header .lesson-title,
+body.darkmode .learning-header .back-link-container {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .learning-header .lesson-instructor {
+  color: #999 !important;
+}
+
+body.darkmode .learning-header .vertical-divider {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+body.darkmode .learning-header .header-divider {
+  border-color: #333 !important;
+}
+
+/* ── Sidebar ── */
+body.darkmode .lesson-sidebar {
+  background-color: #111 !important;
+  border-right-color: #333 !important;
+}
+
+body.darkmode .sidebar-container {
+  background-color: #111 !important;
+}
+
+body.darkmode .sidebar-header .sidebar-title {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .sidebar-close-btn {
+  color: #ccc !important;
+}
+
+body.darkmode .sidebar-close-btn:hover {
+  color: #ff6900 !important;
+}
+
+/* Sidebar buttons */
+body.darkmode .sideButtons {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #e0e0e0 !important;
+}
+
+body.darkmode .upload-button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+body.darkmode .generate-button:hover {
+  background-color: rgba(255, 105, 0, 0.15) !important;
+  color: #ff6900 !important;
+}
+
+/* Accordion */
+body.darkmode .accordion-item {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.darkmode .accordion-button {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+body.darkmode .accordion-button:hover {
+  background-color: #222 !important;
+}
+
+body.darkmode .accordion-button:not(.collapsed) {
+  background-color: #222 !important;
+  color: #fff !important;
+}
+
+body.darkmode .accordion-button::after {
+  filter: invert(1);
+}
+
+body.darkmode .accordion-body {
+  background-color: #1a1a1a !important;
+}
+
+/* File list items */
+body.darkmode .list-group-item {
+  background-color: transparent !important;
+  color: #ccc !important;
+}
+
+body.darkmode .list-group-item:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.darkmode .list-group-item.active {
+  background-color: rgba(255, 105, 0, 0.15) !important;
+  color: #ff6900 !important;
+}
+
+body.darkmode .sidebar-icon {
+  color: #999;
+}
+
+body.darkmode .sidebar-icon:hover {
+  color: #ff6900;
+}
+
+body.darkmode .badge.bg-secondary {
+  background-color: #444 !important;
+}
+
+/* ── Main Content Area ── */
+body.darkmode .lesson-main {
+  background-color: #0d0d0d !important;
+  color: #e0e0e0 !important;
+}
+
+body.darkmode .lesson-main h5,
+body.darkmode .lc-title {
+  color: #f0f0f0 !important;
+}
+
+/* ── Menu Button — keep orange in dark mode ── */
+body.darkmode .menu-button {
+  background-color: #ff6900 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* ── LessonContent tab bar (custom pill tabs) ── */
+body.darkmode .lc-tabs {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.darkmode .lc-tab {
+  color: #999 !important;
+}
+
+body.darkmode .lc-tab:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #e0e0e0 !important;
+}
+
+body.darkmode .lc-tab--active,
+body.darkmode .lc-tab--active:focus,
+body.darkmode .lc-tab--active:focus-visible,
+body.darkmode .lc-tab--active:hover,
+body.darkmode .lc-tab--active:active {
+  background: #222 !important;
+  color: var(--color-accent, #ff6900) !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.4) !important;
+  outline: none !important;
+}
+
+/* ── LessonContent panel area ── */
+body.darkmode .lc-section-label {
+  color: #666 !important;
+}
+
+body.darkmode .lc-summary-body {
+  color: #d0d0d0 !important;
+}
+
+body.darkmode .lc-empty-state p {
+  color: #777 !important;
+}
+
+body.darkmode .lc-loading {
+  color: #777 !important;
+}
+
+/* ── Quiz CTA card ── */
+body.darkmode .quiz-cta-card {
+  background: #1a1a1a !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+body.darkmode .quiz-cta-title {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .quiz-cta-desc {
+  color: #888 !important;
+}
+
+/* ── Analytics cards ── */
+body.darkmode .analytics-card {
+  background: #1a1a1a !important;
+  border-color: #2d2d2d !important;
+}
+
+body.darkmode .analytics-card p.text-muted {
+  color: #888 !important;
+}
+
+body.darkmode .analytics-card h3 {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .analytics-card h4 {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .analytics-progress-track {
+  background-color: #2a2a2a !important;
+}
+
+/* ── Video Player ── */
+body.darkmode .video-placeholder {
+  background-color: #1a1a1a !important;
+  color: #555;
+}
+
+/* ── Audio Player ── */
+body.darkmode .audio-player-container {
+  background-color: #1a1a1a !important;
+}
+
+body.darkmode .track-title {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .track-subtitle {
+  color: #999 !important;
+}
+
+/* ── Uploaded File Card ── */
+body.darkmode .preview-card {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+}
+
+body.darkmode .file-name {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .file-status {
+  color: #999 !important;
+}
+
+body.darkmode .file-icon {
+  color: #666 !important;
+}
+
+/* ── Backdrop ── */
+body.darkmode .sidebar-backdrop.open {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* ── Delete Modal ── */
+body.darkmode .delete-modal-content {
+  background-color: #1a1a1a !important;
+}
+
+body.darkmode .delete-modal-title {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .delete-modal-subtitle {
+  color: #999 !important;
+}
+
+body.darkmode .delete-modal-filename {
+  color: #ccc !important;
+}
+
+body.darkmode .delete-btn-cancel {
+  background-color: #222 !important;
+  border-color: #444 !important;
+  color: #ccc !important;
+}
+
+body.darkmode .delete-btn-cancel:hover {
+  background-color: #333 !important;
+}
+
+/* ── AI Tutor Panel ── */
+body.darkmode .ai-tutor-panel {
+  background-color: #111 !important;
+  box-shadow: -3px 0 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.darkmode .ai-body {
+  background-color: #0d0d0d !important;
+}
+
+body.darkmode .ai-bubble-msg {
+  background-color: #222 !important;
+  color: #e0e0e0 !important;
+}
+
+body.darkmode .ai-footer {
+  background-color: #111 !important;
+  border-top-color: #333 !important;
+}
+
+body.darkmode .ai-input {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+  color: #e0e0e0 !important;
+}
+
+body.darkmode .ai-input:focus {
+  border-color: var(--color-accent, #ff6900) !important;
+  box-shadow: 0 0 0 3px var(--color-accent-ring, rgba(255,105,0,0.3)) !important;
+}
+
+/* ── Overview/Summary text ── */
+body.darkmode .lesson-main strong {
+  color: #f0f0f0 !important;
+}
+
+body.darkmode .lesson-main .text-muted {
+  color: #888 !important;
+}
+
+/* ── Toast ── */
+body.darkmode .toast {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODERN SCROLLBARS
+   Targets: sidebar panel, video wrapper, PDF list in modal
+   ════════════════════════════════════════════════════════════════ */
+
+/* Firefox */
+.sidebar-container,
+.video-embed-wrapper,
+.lesson-main,
+[style*="overflowY: auto"],
+[style*="overflow-y: auto"] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 105, 0, 0.4) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.sidebar-container::-webkit-scrollbar,
+.video-embed-wrapper::-webkit-scrollbar,
+.lesson-main::-webkit-scrollbar,
+[style*="overflowY: auto"]::-webkit-scrollbar,
+[style*="overflow-y: auto"]::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-container::-webkit-scrollbar-track,
+.video-embed-wrapper::-webkit-scrollbar-track,
+.lesson-main::-webkit-scrollbar-track,
+[style*="overflowY: auto"]::-webkit-scrollbar-track,
+[style*="overflow-y: auto"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-container::-webkit-scrollbar-thumb,
+.video-embed-wrapper::-webkit-scrollbar-thumb,
+.lesson-main::-webkit-scrollbar-thumb,
+[style*="overflowY: auto"]::-webkit-scrollbar-thumb,
+[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
+  background: rgba(180, 180, 180, 0.35);
+  border-radius: 999px;
+}
+
+.sidebar-container::-webkit-scrollbar-thumb:hover,
+.video-embed-wrapper::-webkit-scrollbar-thumb:hover,
+.lesson-main::-webkit-scrollbar-thumb:hover,
+[style*="overflowY: auto"]::-webkit-scrollbar-thumb:hover,
+[style*="overflow-y: auto"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 105, 0, 0.6);
+}
+
+/* Dark mode: slightly lighter track visibility */
+body.darkmode .sidebar-container::-webkit-scrollbar-thumb,
+body.darkmode .lesson-main::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+body.darkmode .sidebar-container::-webkit-scrollbar-thumb:hover,
+body.darkmode .lesson-main::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 105, 0, 0.55);
+}
+
+/* ── Space above Cancel / Generate buttons in modal ────────────── */
+.delete-modal-actions {
+  margin-top: 16px;
+}

@@ -1,0 +1,255 @@
+/* ═════════════════════════════════════════════════════════════
+   Profile.css — Edit Profile page, fully dark-mode aware
+   No Bootstrap color utilities; dark mode handled here.
+   ═════════════════════════════════════════════════════════════ */
+
+/* ── Page container ──────────────────────────────────────── */
+.pf-container {
+  max-width: 560px;
+  padding-top: 2.5rem;
+  padding-bottom: 3rem;
+}
+
+/* ── Headings ─────────────────────────────────────────────── */
+.pf-heading {
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 0.2rem;
+}
+
+.pf-subheading {
+  font-size: 0.93rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Form ─────────────────────────────────────────────────── */
+.pf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pf-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* ── Labels ───────────────────────────────────────────────── */
+.pf-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Text inputs ─────────────────────────────────────────── */
+.pf-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  box-sizing: border-box;
+}
+
+.pf-input:focus {
+  border-color: var(--color-accent, #ff6900);
+  box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.15);
+}
+
+.pf-input::placeholder {
+  color: #9ca3af;
+}
+
+/* ── Password section card ────────────────────────────────── */
+.pf-password-section {
+  background: #f8fafc;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.pf-password-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  margin-bottom: 2px;
+}
+
+.pf-password-hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ── Validation errors ────────────────────────────────────── */
+.pf-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin: 4px 0 0;
+}
+
+/* ── Hint / read-only note ────────────────────────────────── */
+.pf-hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 4px 0 0;
+}
+
+/* Disabled (read-only) input */
+.pf-input:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: default;
+  opacity: 1;
+}
+
+/* ── Action buttons ──────────────────────────────────────── */
+.pf-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pf-btn-save {
+  flex: 1;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background-color: #1a1a1a;
+  border: 1px solid #1a1a1a;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease, opacity 0.18s ease;
+}
+
+.pf-btn-save:hover {
+  background-color: #333;
+  border-color: #333;
+}
+
+.pf-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pf-btn-cancel {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #374151;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.pf-btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: #9ca3af;
+}
+
+/* ── Muted text (loading state) ──────────────────────────── */
+.pf-text-muted {
+  color: #6b7280;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE
+   ════════════════════════════════════════════════════════════ */
+
+body.darkmode .pf-heading {
+  color: #f0f0f0;
+}
+
+body.darkmode .pf-subheading {
+  color: #9ca3af;
+}
+
+body.darkmode .pf-label {
+  color: #9ca3af;
+}
+
+/* Inputs */
+body.darkmode .pf-input {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  border-color: #3d3d3d;
+}
+
+body.darkmode .pf-input:focus {
+  border-color: var(--color-accent, #ff6900);
+  box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.2);
+}
+
+body.darkmode .pf-input::placeholder {
+  color: #6b7280;
+}
+
+/* Password section */
+body.darkmode .pf-password-section {
+  background: #1a1a1a;
+  border-color: #2d2d2d;
+}
+
+body.darkmode .pf-password-title {
+  color: #d1d5db;
+}
+
+body.darkmode .pf-password-hint {
+  color: #6b7280;
+}
+
+/* Buttons */
+body.darkmode .pf-btn-save {
+  background-color: #f0f0f0;
+  border-color: #f0f0f0;
+  color: #111;
+}
+
+body.darkmode .pf-btn-save:hover {
+  background-color: #ffffff;
+  border-color: #ffffff;
+}
+
+body.darkmode .pf-btn-cancel {
+  color: #9ca3af;
+  border-color: #3d3d3d;
+}
+
+body.darkmode .pf-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #555;
+}
+
+body.darkmode .pf-text-muted {
+  color: #6b7280;
+}
+
+body.darkmode .pf-hint {
+  color: #6b7280;
+}
+
+body.darkmode .pf-input:disabled {
+  background-color: #161616;
+  color: #6b7280;
+  border-color: #2d2d2d;
+}

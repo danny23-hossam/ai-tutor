@@ -1,0 +1,6 @@
+{
+  "resource": "https://papyrusai.me",
+  "authorization_servers": ["https://papyrusai.me"],
+  "scopes_supported": ["api", "stream"],
+  "bearer_methods_supported": ["header", "cookie"]
+}

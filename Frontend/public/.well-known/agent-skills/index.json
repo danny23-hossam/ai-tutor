@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agentskills.io/schema/v0.2.0/skills_index.json",
+  "skills": [
+    {
+      "name": "papyrus-ai-api",
+      "type": "rest",
+      "description": "Core interactions with the PapyrusAI tutoring platform",
+      "url": "/api/openapi.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -19,4 +19,4 @@ router.put('/profile', updateUserProfile);
 // DELETE /api/users/:id - delete a user by ID
 router.delete('/:id', deleteUser);
 
-module.exports = router;
+module.exports = router;

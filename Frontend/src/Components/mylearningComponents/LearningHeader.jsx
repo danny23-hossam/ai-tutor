@@ -1,39 +1,69 @@
-import React from "react";
-import { Container, Row, Col } from "react-bootstrap";
-import { ArrowLeft } from "react-bootstrap-icons";
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, MoonFill, SunFill } from "react-bootstrap-icons";
 import "./LearningHeader.css";
 import { useNavigate } from "react-router-dom";
-    
-function LearningHeader() {
+
+function LearningHeader({ lessonTitle }) {
   const navigate = useNavigate();
 
+  // Mirror the same dark-mode state logic as the main Header
+  const [darkmode, setDarkmode] = useState(
+    () => localStorage.getItem("darkmode") === "true"
+  );
+
+  // Sync body class on mount (in case lesson page loads with darkmode already on)
+  useEffect(() => {
+    if (darkmode) {
+      document.body.classList.add("darkmode");
+    } else {
+      document.body.classList.remove("darkmode");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleDark = () => {
+    const next = !darkmode;
+    setDarkmode(next);
+    localStorage.setItem("darkmode", String(next));
+    if (next) {
+      document.body.classList.add("darkmode");
+      document.body.classList.remove("lightmode");
+    } else {
+      document.body.classList.remove("darkmode");
+      document.body.classList.add("lightmode");
+    }
+  };
+
   return (
-    <div className="learning-header ">
-      <Container fluid className="px-4 py-2">
-        <Row className="align-items-center">
-          <Col xs="auto" className="d-flex align-items-center back-link-container"
-          onClick={() => navigate("/mylearning")}>
-            <ArrowLeft size={18} className="me-2" />
-            <span className="back-link">Back to My Learning</span>
-          </Col>
+    <div className="learning-header sticky-top">
+      <div className="lh-inner">
 
-          <Col xs="auto">
-            <div className="vertical-divider"></div>
-          </Col>
+        {/* ── Back link ── */}
+        <button
+          className="lh-back"
+          onClick={() => navigate("/mylearning")}
+          aria-label="Back to My Learning"
+        >
+          <ArrowLeft size={17} />
+          <span className="lh-back-text">Back to My Learning</span>
+        </button>
 
-          {/* Lesson title and instructor */}
-          <Col>
-            <div className="lesson-details">
-              <h5 className="lesson-title mb-0">Newton&apos;s Second Law</h5>
-              <small className="lesson-instructor text-muted">
-                Dr. Sarah Mitchell
-              </small>
-            </div>
-          </Col>
-        </Row>
-      </Container>
+        <div className="lh-divider" aria-hidden="true" />
 
-      <hr className="header-divider" />
+        {/* ── Lesson title (fills remaining space) ── */}
+        <h1 className="lh-title">{lessonTitle || "Lesson"}</h1>
+
+        {/* ── Dark mode toggle ── */}
+        <button
+          className="lh-dark-toggle"
+          onClick={toggleDark}
+          aria-label={darkmode ? "Switch to light mode" : "Switch to dark mode"}
+          title={darkmode ? "Light mode" : "Dark mode"}
+        >
+          {darkmode ? <SunFill size={16} /> : <MoonFill size={16} />}
+        </button>
+
+      </div>
+      <div className="lh-border" />
     </div>
   );
 }

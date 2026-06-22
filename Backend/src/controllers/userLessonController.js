@@ -61,8 +61,11 @@ const createUserLesson = async (req, res) => {
             exam_score,
         } = req.body;
 
-        // Check lesson exists
-        const lessonCheck = await db.query('SELECT id FROM lessons WHERE id = $1', [lessonId]);
+        // P2-2: verify lesson exists AND belongs to this user (prevents cross-user tracking)
+        const lessonCheck = await db.query(
+            'SELECT id FROM lessons WHERE id = $1 AND user_id = $2',
+            [lessonId, userId]
+        );
         if (lessonCheck.rows.length === 0) {
             return res.status(404).json({ message: 'Lesson not found' });
         }
@@ -86,12 +89,13 @@ const createUserLesson = async (req, res) => {
             [
                 userId,
                 lessonId,
-                time_spent ?? 0,
-                videos_watched_count ?? 0,
+                // P3-2: cap numeric fields to sane ranges
+                Math.min(Math.max(time_spent ?? 0, 0), 86400),          // 0–24h seconds
+                Math.min(Math.max(videos_watched_count ?? 0, 0), 10000), // 0–10000
                 practice_completed ?? false,
                 last_entered ?? null,
-                quiz_score ?? null,
-                exam_score ?? null,
+                quiz_score != null ? Math.min(Math.max(quiz_score, 0), 100) : null,   // 0–100
+                exam_score  != null ? Math.min(Math.max(exam_score, 0), 100)  : null, // 0–100
             ]
         );
 
@@ -117,16 +121,40 @@ const updateUserLesson = async (req, res) => {
         } = req.body;
 
         // Build dynamic SET clause from provided fields only
+        // time_spent and videos_watched_count are INCREMENTAL (+=)
         const fields = [];
         const values = [];
         let paramIndex = 1;
 
-        if (time_spent !== undefined) { fields.push(`time_spent = $${paramIndex++}`); values.push(time_spent); }
-        if (videos_watched_count !== undefined) { fields.push(`videos_watched_count = $${paramIndex++}`); values.push(videos_watched_count); }
+        if (time_spent !== undefined) {
+            // P3-2: cap time_spent increment at 24h
+            const safeDuration = Math.min(Math.max(time_spent, 0), 86400);
+            fields.push(`time_spent = time_spent + $${paramIndex++}`);
+            values.push(safeDuration);
+        }
+        if (videos_watched_count !== undefined) {
+            const safeCount = Math.min(Math.max(videos_watched_count, 0), 10000);
+            // Cap at actual READY video count for this lesson so analytics never exceed 100%.
+            // Pending generated videos (without file_path) are not watchable yet.
+            fields.push(
+                `videos_watched_count = LEAST(
+                    videos_watched_count + $${paramIndex},
+                    (
+                        SELECT COUNT(*)
+                        FROM lesson_files
+                        WHERE lesson_id = $${paramIndex + 1}
+                          AND type = 'video'
+                          AND NULLIF(BTRIM(file_path), '') IS NOT NULL
+                    )
+                )`
+            );
+            values.push(safeCount, lessonId);
+            paramIndex += 2;
+        }
         if (practice_completed !== undefined) { fields.push(`practice_completed = $${paramIndex++}`); values.push(practice_completed); }
         if (last_entered !== undefined) { fields.push(`last_entered = $${paramIndex++}`); values.push(last_entered); }
-        if (quiz_score !== undefined) { fields.push(`quiz_score = $${paramIndex++}`); values.push(quiz_score); }
-        if (exam_score !== undefined) { fields.push(`exam_score = $${paramIndex++}`); values.push(exam_score); }
+        if (quiz_score !== undefined) { fields.push(`quiz_score = $${paramIndex++}`); values.push(Math.min(Math.max(quiz_score, 0), 100)); }
+        if (exam_score !== undefined) { fields.push(`exam_score = $${paramIndex++}`); values.push(Math.min(Math.max(exam_score, 0), 100)); }
 
         if (fields.length === 0) {
             return res.status(400).json({ message: 'No fields provided to update' });

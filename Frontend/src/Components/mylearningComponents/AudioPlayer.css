@@ -1,9 +1,8 @@
 /* Container */
 .audio-player-container {
-  background-color: #fff7ed; /* Light cream/orange background */
+  background-color: #fff7ed;
   border-radius: 16px;
   padding: 40px;
-  width: 100%;
   width: 100%;
   margin: 20px auto;
   text-align: center;
@@ -17,26 +16,20 @@
 .icon-wrapper {
   width: 75px;
   height: 75px;
-  background-color: #f97316;
+  background-color: var(--color-accent, #ff6900);
   border-radius: 50%;
-  
-  /* 1. Use Flexbox for centering */
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  /* 2. Remove line-height to prevent vertical offsets */
-  line-height: 0; 
-  
+  line-height: 0;
   margin-bottom: 24px;
-  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 10px rgba(255, 105, 0, 0.3);
 }
 
 .music-icon {
   color: white;
   font-size: 40px;
-  /* Remove font-weight: bold for icons, it can sometimes distort SVGs */
-  display: block; /* Ensures no inline spacing issues */
+  display: block;
 }
 
 .track-title {
@@ -45,6 +38,7 @@
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 8px;
+  word-break: break-word;
 }
 
 .track-subtitle {
@@ -67,7 +61,162 @@
 
 .wave-bar {
   width: 4px;
-  background-color: #f97316;
+  background-color: var(--color-accent, #ff6900);
+  border-radius: 4px;
+  opacity: 0.8;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Inactive waveform — no animation, muted colour */
+.waveform--inactive .wave-bar {
+  animation: none;
+  opacity: 0.3;
+  background-color: #aaa;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scaleY(1); opacity: 0.8; }
+  50% { transform: scaleY(1.2); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-bar { animation: none; }
+}
+
+/* ── Real audio player card ─────────────────────────────────── */
+.audio-player-real {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #fff7ed;
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.audio-player-real__icon {
+  width: 60px;
+  height: 60px;
+  background: var(--color-accent, #ff6900);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(255,105,0,0.3);
+}
+
+.audio-player-real__info {
+  text-align: center;
+}
+
+.audio-player-real__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  word-break: break-word;
+}
+
+.audio-player-real__sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 2px 0 0;
+}
+
+.audio-player-real__element {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 8px;
+  outline: none;
+}
+
+/* Dark mode overrides */
+.darkmode .audio-player-real,
+.darkmode .audio-player-container {
+  background: #2a1a0a;
+  color: #e0cdb0;
+}
+.darkmode .track-title,
+.darkmode .audio-player-real__title { color: #f0e0c8; }
+.darkmode .track-subtitle,
+.darkmode .audio-player-real__sub   { color: #a08060; }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .audio-player-container,
+  .audio-player-real {
+    padding: 20px 16px;
+    border-radius: 12px;
+    margin: 12px auto;
+  }
+
+  .icon-wrapper { width: 56px; height: 56px; margin-bottom: 16px; }
+  .music-icon   { font-size: 28px; }
+  .track-title  { font-size: 17px; }
+  .track-subtitle { margin-bottom: 20px; }
+
+  .waveform {
+    max-width: 100%;
+    height: 44px;
+    margin-bottom: 20px;
+  }
+  .wave-bar { width: 3px; }
+}
+
+
+.icon-wrapper {
+  width: 75px;
+  height: 75px;
+  background-color: var(--color-accent, #ff6900);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 10px rgba(255, 105, 0, 0.3);
+}
+
+.music-icon {
+  color: white;
+  font-size: 40px;
+  display: block;
+}
+
+.track-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.track-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 32px;
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 60px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 32px;
+}
+
+.wave-bar {
+  width: 4px;
+  background-color: var(--color-accent, #ff6900);
   border-radius: 4px;
   opacity: 0.8;
   animation: pulse 1.5s infinite ease-in-out;
@@ -77,32 +226,31 @@
 .play-btn {
   width: 56px;
   height: 56px;
-  background-color: #f97316;
+  background-color: var(--color-accent, #ff6900);
   border: none;
   border-radius: 50%;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: 4px; 
+  padding-left: 4px;
   padding-top: 0;
   padding-bottom: 0;
   padding-right: 0;
-  
   cursor: pointer;
   transition: transform 0.2s, background-color 0.2s;
   box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
-  line-height: 0; /* Clear text spacing */
+  line-height: 0;
 }
 
 .play-btn svg {
   display: block;
-  stroke:white;
+  stroke: white;
   stroke-width: 1px;
 }
 
 .play-btn:hover {
-  background-color: #ea580c;
+  background-color: var(--color-accent-hover, #e05e00);
   transform: scale(1.05);
 }
 
@@ -114,3 +262,45 @@
   0%, 100% { transform: scaleY(1); opacity: 0.8; }
   50% { transform: scaleY(1.2); opacity: 1; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-bar { animation: none; }
+  .play-btn { transition: none; }
+}
+
+/* ── Mobile (≤576px) ───────────────────────────────────────── */
+@media (max-width: 576px) {
+  .audio-player-container {
+    padding: 20px 16px;
+    border-radius: 12px;
+    margin: 12px auto;
+  }
+
+  .icon-wrapper {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 16px;
+  }
+
+  .music-icon {
+    font-size: 28px;
+  }
+
+  .track-title {
+    font-size: 17px;
+  }
+
+  .track-subtitle {
+    margin-bottom: 20px;
+  }
+
+  .waveform {
+    max-width: 100%;
+    height: 44px;
+    margin-bottom: 20px;
+  }
+
+  .wave-bar {
+    width: 3px;
+  }
+}

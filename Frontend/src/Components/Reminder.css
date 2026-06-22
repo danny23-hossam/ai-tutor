@@ -1,125 +1,236 @@
-.remindermaindiv1{
-   
-   
-    position: relative;
-      margin-top: 15vh;
-    margin-left: 10vw;
-    display: flex;
-    flex-direction: row;
-} 
-.remindermaindiv1 h5{
-    font-size: 30px;
-    font-weight: 400;
-    
-}
-.btnr{
-    margin-left: auto;
-   
-    margin-right: 20vw;
- width: 200px;
- height: 40px;
- border-radius: 20px;
- background-color:  rgb(24, 119, 242);
- color: white;
- position: relative;
- top: 25px;
- transition: background-color 1s ease-in-out;
+/* ═══════════════════════════════════════════════════════════
+   Reminder page — light + dark mode, mobile ready
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Page heading ─────────────────────────────────────────── */
+.reminder-heading {
+  font-weight: 400;
+  color: var(--color-text, #1a1a1a);
 }
 
-.btnr:hover{
-    background-color:rgb(4, 41, 93) ;
+/* ── Hover scale utility ──────────────────────────────────── */
+.hover-scale {
+  transition: transform 0.2s ease-in-out;
+}
+.hover-scale:hover {
+  transform: scale(1.05);
 }
 
-.remindertable{
-    margin-left: 10vw;
-    margin-top: 2vw;
- width: 80%;
-    box-shadow: 0px;
-    border-collapse: collapse;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
-      border-radius: 20px;
-}
-th,tr{
-        text-align: center;
+/* ── Form card ─────────────────────────────────────────────── */
+.reminder-form-card {
+  background-color: #f8f9fa;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
-th{
-    padding-top: 10px;
-    border-bottom: 1px solid rgb(222, 221, 221);
-    padding-bottom: 10px;
-}
-.remindertable tr:not(:last-child) {
-  border-bottom: 1px solid rgb(222, 221, 221);
-}
-.reminder{
-    text-align: left;
-    position: relative;
-    left: 15px;
-}
-.remindertd{
-    text-align: left;
-}
-.tabletrash{
-    color: red;
-}
-.tabletrash:hover{
-    cursor: pointer;
+.reminder-label {
+  font-size: 0.9rem;
 }
 
-.searchdiv{
-    margin-left: 10vw;
-    margin-right: 10vw;
-    margin-top: 5vh;
- 
-     
+/* ── Form inputs ───────────────────────────────────────────── */
+.reminder-input {
+  background-color: #fff;
+  color: #1a1a1a;
 }
-.search{
-    border-radius: 20px;
-}
-
-
-
-@media (max-width: 480px) {
-.remindermaindiv1{
-    display: flex;
-    flex-direction: column;
+.reminder-input:focus {
+  box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.2) !important;
+  border-color: #ff6900 !important;
 }
 
+/* ── Cancel button ─────────────────────────────────────────── */
+.reminder-cancel-btn {
+  background-color: #e9ecef;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+.reminder-cancel-btn:hover {
+  background-color: #dee2e6;
+  color: #212529;
 }
 
-/* 📱 Mobile Small (320px–374px) */
-@media screen and (min-width: 320px) and (max-width: 374px) {
-.btnr{
-
- position: relative;
- top: 0px;
- right: 30px;
-
+/* ── Search ────────────────────────────────────────────────── */
+.reminder-search {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
 }
-.remindertable{
-    position: relative;
-    right: 20px;
+.reminder-search-icon {
+  color: #888;
 }
+.reminder-search:focus {
+  box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.2) !important;
+  outline: none;
 }
 
-/* 📱 Mobile Medium (375px–424px) */
-@media screen and (min-width: 375px) and (max-width: 424px) {
-.btnr{
-
- position: relative;
- top: 0px;
- right: 70px;
-
-}
+/* ── Table card shell ─────────────────────────────────────── */
+.reminder-table-card {
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
 }
 
-/* 📱 Mobile Large (425px–480px) */
-@media screen and (min-width: 425px) and (max-width: 480px) {
-.btnr{
-
- position: relative;
- top: 0px;
- right: 100px;
-
+/* ── Table header ─────────────────────────────────────────── */
+.reminder-thead {
+  background-color: #f3f4f6;
 }
+.reminder-th {
+  color: #6b7280;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Table rows ────────────────────────────────────────────── */
+.reminder-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.reminder-date-main {
+  color: #1a1a1a;
+}
+
+.reminder-notes {
+  color: #1a1a1a;
+}
+
+/* ── Delete button ─────────────────────────────────────────── */
+.reminder-delete-btn {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  transition: background-color 0.15s;
+}
+.reminder-delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+  color: #b02a37 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════════════════════ */
+
+body.darkmode .reminder-heading {
+  color: #f0f0f0;
+}
+
+/* Form card */
+body.darkmode .reminder-form-card {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Form inputs */
+body.darkmode .reminder-input {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+body.darkmode .reminder-input::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+/* Date input — browser-native picker icon */
+body.darkmode .reminder-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.6);
+}
+
+/* Cancel button */
+body.darkmode .reminder-cancel-btn {
+  background-color: #2a2a2a !important;
+  color: #ccc !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+body.darkmode .reminder-cancel-btn:hover {
+  background-color: #383838 !important;
+  color: #f0f0f0 !important;
+}
+
+/* Search */
+body.darkmode .reminder-search {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+body.darkmode .reminder-search::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+body.darkmode .reminder-search-icon {
+  color: #666 !important;
+}
+
+/* Table card */
+body.darkmode .reminder-table-card {
+  background-color: #141414 !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Table header */
+body.darkmode .reminder-thead {
+  background-color: #1e1e1e !important;
+}
+body.darkmode .reminder-th {
+  color: #888 !important;
+}
+
+/* Table rows */
+body.darkmode .reminder-row {
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+body.darkmode .table-hover > tbody > tr.reminder-row:hover > td {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.darkmode .reminder-date-main {
+  color: #e0e0e0 !important;
+}
+body.darkmode .reminder-notes {
+  color: #d0d0d0 !important;
+}
+
+/* Delete button */
+body.darkmode .reminder-delete-btn {
+  background-color: rgba(220, 53, 69, 0.15) !important;
+  color: #f87171 !important;
+}
+body.darkmode .reminder-delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.28) !important;
+  color: #fca5a5 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE — make table readable on small screens
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 576px) {
+  /* Reduce padding in table cells */
+  .reminder-table-card td,
+  .reminder-table-card th {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Table header labels shorter on mobile */
+  .reminder-th {
+    font-size: 0.75rem;
+  }
+
+  /* Date column tighter */
+  .reminder-date-main {
+    font-size: 0.88rem;
+  }
+
+  /* Make sure table doesn't break layout */
+  .reminder-table-card .table-responsive {
+    border-radius: 0;
+  }
+
+  /* Full-width search on mobile */
+  .reminder-search {
+    max-width: 100% !important;
+  }
+
+  /* Form card: single column already handled by Bootstrap col-12 */
+  .reminder-form-card .card-body {
+    padding: 1rem !important;
+  }
+
+  /* Add Reminder heading section */
+  .reminder-heading {
+    font-size: 1.4rem;
+  }
 }
