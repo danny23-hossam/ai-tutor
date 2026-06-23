@@ -133,22 +133,34 @@ const QuizFlashcards = () => {
                 <span className="qf-section-label">Answer</span>
               </div>
               <p className="qf-answer-text">{quiz[questionnumber].answer}</p>
-              <div className="qf-card-header" style={{marginBottom: '4px'}}>
-                <div className="qf-icon-wrap"><i className="bi bi-check2-all" aria-hidden="true" style={{color: 'var(--color-success)'}}></i></div>
-                <span className="qf-section-label">Why This Is Correct</span>
-              </div>
-              <p className="qf-answer-text">{quiz[questionnumber].why_correct}</p>
+              {/* Only show "Why Correct" if the pipeline populated it */}
+              {quiz[questionnumber].why_correct && (
+                <>
+                  <div className="qf-card-header" style={{marginBottom: '4px'}}>
+                    <div className="qf-icon-wrap"><i className="bi bi-check2-all" aria-hidden="true" style={{color: 'var(--color-success)'}}></i></div>
+                    <span className="qf-section-label">Why This Is Correct</span>
+                  </div>
+                  <p className="qf-answer-text">{quiz[questionnumber].why_correct}</p>
+                </>
+              )}
             </div>
           )}
 
-          {/* Common mistakes */}
+          {/* Common mistakes — only show when the pipeline generated this field */}
           {showanswers === 2 && (
             <div className="qf-answer-section">
-              <div className="qf-card-header" style={{marginTop: '16px', marginBottom: '4px'}}>
-                <div className="qf-icon-wrap"><i className="bi bi-exclamation-triangle" aria-hidden="true" style={{color: 'var(--color-error)'}}></i></div>
-                <span className="qf-section-label">Common Mistakes</span>
-              </div>
-              <p className="qf-mistake-text">{quiz[questionnumber].common_mistake}</p>
+              <p className="qf-answer-text">{quiz[questionnumber].answer}</p>
+              {quiz[questionnumber].common_mistake ? (
+                <>
+                  <div className="qf-card-header" style={{marginTop: '16px', marginBottom: '4px'}}>
+                    <div className="qf-icon-wrap"><i className="bi bi-exclamation-triangle" aria-hidden="true" style={{color: 'var(--color-error)'}}></i></div>
+                    <span className="qf-section-label">Common Mistakes</span>
+                  </div>
+                  <p className="qf-mistake-text">{quiz[questionnumber].common_mistake}</p>
+                </>
+              ) : (
+                <p className="qf-answer-text" style={{opacity: 0.5, fontStyle: 'italic'}}>No common mistakes noted for this card.</p>
+              )}
             </div>
           )}
         </MotionDiv>

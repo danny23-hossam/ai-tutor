@@ -178,49 +178,36 @@ const uploadFile = async (req, res) => {
 
         res.status(201).json(result.rows[0]);
 
-        // ── Option C: Auto-generate summary in the background ────────
-        // Fire-and-forget — don't block the upload response
+        // ── Send file to AI Pipeline for OCR + vectorization ──────────────
+        // Fire-and-forget — don't block the upload response.
+        // The pipeline will OCR the file, chunk it, and store it in its
+        // vector DB so that summary/quiz/exam/chat can be generated later.
         const aiService = require('../services/aiService');
+        const fileIdForPipeline = result.rows[0].id;
+        const fileBufferCopy = Buffer.from(buffer); // copy before it goes out of scope
         (async () => {
             try {
                 const aiReady = await aiService.isAvailable();
                 if (!aiReady) {
-                    console.log('[auto-summary] AI service not available, skipping.');
+                    console.log('[pipeline-upload] AI pipeline not available, skipping OCR upload.');
                     return;
                 }
-
-                // Check if summary already exists for this lesson
-                const existingSummary = await db.query(
-                    `SELECT id FROM ai_generations
-                     WHERE user_id = $1 AND lesson_id = $2 AND type = 'summary'`,
-                    [userId, lesson_id]
+                const pipelineResult = await aiService.callPipelineUpload(
+                    String(userId),
+                    String(fileIdForPipeline),   // document_id = lesson_files.id
+                    String(lesson_id),
+                    fileBufferCopy,
+                    originalname,
+                    mimetype
                 );
-
-                // Call AI to generate/regenerate summary
-                const summary = await aiService.callSummarize('', String(userId), String(lesson_id));
-                if (!summary) {
-                    console.log('[auto-summary] AI returned no summary.');
-                    return;
-                }
-
-                const summaryText = typeof summary === 'string' ? summary : JSON.stringify(summary);
-
-                if (existingSummary.rows.length > 0) {
-                    await db.query(
-                        `UPDATE ai_generations SET content = $1 WHERE id = $2`,
-                        [summaryText, existingSummary.rows[0].id]
-                    );
-                    console.log(`[auto-summary] Updated summary for lesson ${lesson_id}`);
+                if (pipelineResult) {
+                    console.log(`[pipeline-upload] File ${originalname} sent to pipeline. ` +
+                        `source=${pipelineResult.source}, chunks=${pipelineResult.chunks_count}`);
                 } else {
-                    await db.query(
-                        `INSERT INTO ai_generations (user_id, lesson_id, type, content)
-                         VALUES ($1, $2, 'summary', $3)`,
-                        [userId, lesson_id, summaryText]
-                    );
-                    console.log(`[auto-summary] Created summary for lesson ${lesson_id}`);
+                    console.warn(`[pipeline-upload] Pipeline returned no data for file ${originalname}`);
                 }
             } catch (err) {
-                console.error('[auto-summary] Background generation failed:', err.message);
+                console.error('[pipeline-upload] Background pipeline upload failed:', err.message);
             }
         })();
 

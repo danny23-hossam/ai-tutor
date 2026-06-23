@@ -126,32 +126,54 @@ function Sidebar({ onCloseSidebar, onSelectContent, onFilesChanged, lessonId }) 
     setGenerateModal({ show: false, type: null, selectedPdfIds: [] });
     if (!lessonId) return;
 
-    const label = type === "video" ? "AI Video" : "AI Audio";
-    const count = (type === "video" ? videos : audios).length + 1;
-    const name = `${label} ${count}`;
+    if (type === 'audio') {
+      // For audio: call the full TTS pipeline endpoint which generates the
+      // WAV via the AI pipeline and stores it in Google Drive automatically.
+      showNotify('info', '🎙️ Generating audio… this may take a few minutes.');
+      try {
+        const { data } = await apiClient.post('/ai-generations/audio', {
+          lesson_id: lessonId,
+          language: 'ar', // default to Arabic; can be made configurable
+        });
+        setFiles((prev) => [...prev, data.file]);
+        setActiveId(data.file.id);
+        onSelectContent('audio', data.file.name, data.file.file_path, data.file.id);
+        setOpenAccordion('2');
+        showNotify('success', '✅ Audio generated successfully!');
+        if (onFilesChanged) onFilesChanged();
+        if (onCloseSidebar) onCloseSidebar();
+      } catch (err) {
+        console.error('Audio generation failed:', err);
+        showNotify('error', `Audio generation failed: ${err.response?.data?.message || err.message || 'Unknown error'}`);
+      }
+    } else {
+      // For video: create a placeholder record; the AI team uploads the
+      // video to Drive and updates file_path separately.
+      const label = 'AI Video';
+      const count = videos.length + 1;
+      const name = `${label} ${count}`;
+      const sourcePdfs = uploadedFiles
+        .filter((f) => selectedPdfIds.includes(f.id))
+        .map((f) => ({ id: f.id, name: f.name, file_path: f.file_path }));
 
-    // Build source file details for the AI team
-    const sourcePdfs = uploadedFiles
-      .filter((f) => selectedPdfIds.includes(f.id))
-      .map((f) => ({ id: f.id, name: f.name, file_path: f.file_path }));
-
-    try {
-      const { data } = await apiClient.post("/lesson-files", {
-        lesson_id: lessonId,
-        type,
-        name,
-        source_file_ids: selectedPdfIds,   // AI team uses these to locate PDFs
-        source_files: sourcePdfs,           // convenience: full paths included
-      });
-      setFiles((prev) => [...prev, data]);
-      setActiveId(data.id);
-      onSelectContent(type, data.name, data.file_path, data.id);
-      setOpenAccordion(type === "video" ? "1" : "2");
-      if (onFilesChanged) onFilesChanged(); // refresh analytics
-      if (onCloseSidebar) onCloseSidebar();
-    } catch (err) {
-      console.error("Generate failed:", err);
-      showNotify("error", `Generation failed: ${err.response?.data?.message || err.message || "Unknown error"}`);
+      try {
+        const { data } = await apiClient.post('/lesson-files', {
+          lesson_id: lessonId,
+          type,
+          name,
+          source_file_ids: selectedPdfIds,   // AI team uses these to locate PDFs
+          source_files: sourcePdfs,           // convenience: full paths included
+        });
+        setFiles((prev) => [...prev, data]);
+        setActiveId(data.id);
+        onSelectContent(type, data.name, data.file_path, data.id);
+        setOpenAccordion('1');
+        if (onFilesChanged) onFilesChanged();
+        if (onCloseSidebar) onCloseSidebar();
+      } catch (err) {
+        console.error('Video placeholder creation failed:', err);
+        showNotify('error', `Generation failed: ${err.response?.data?.message || err.message || 'Unknown error'}`);
+      }
     }
   };
 
