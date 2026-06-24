@@ -3,44 +3,75 @@ import "./AudioPlayer.css";
 import { BsMusicNoteBeamed } from "react-icons/bs";
 import apiClient from "../../api/apiClient";
 
-// Extract Drive file ID from stored URL formats
-function getDriveFileId(url) {
-  if (!url) return null;
-  try {
-    const idParam = new URL(url).searchParams.get("id");
-    if (idParam) return idParam;
-    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-}
+const AudioPlayer = ({ title, filePath, fileId, lessonId }) => {
+  const [localFilePath, setLocalFilePath] = useState(filePath);
+  const [isChecking, setIsChecking] = useState(false);
 
-const AudioPlayer = ({ title, filePath, fileId }) => {
-  const driveId = getDriveFileId(filePath);
-
-  // HIGH-1: short-lived stream token — keeps full JWT out of audio src URLs
-  const [streamToken, setStreamToken] = useState(null);
-
+  // Sync when props change
   useEffect(() => {
-    if (!fileId) return;
-    let cancelled = false;
-    apiClient.post(`/lesson-files/stream-token/${fileId}`)
-      .then((res) => { if (!cancelled) setStreamToken(res.data.token); })
-      .catch(() => { if (!cancelled) setStreamToken(null); });
-    return () => { cancelled = true; };
-  }, [fileId]);
+    setLocalFilePath(filePath);
+  }, [fileId, filePath]);
 
-  // ── Real audio player ──────────────────────────────────────────
-  if (driveId || fileId) {
-    // Use backend stream proxy for reliable auth + CORS handling
-    let streamSrc = null;
-    if (fileId && streamToken) {
-      streamSrc = `/api/lesson-files/stream/${fileId}?streamToken=${encodeURIComponent(streamToken)}`;
-    } else if (driveId) {
-      streamSrc = `https://drive.google.com/uc?export=download&id=${driveId}`;
-    }
+  // ── Auto-poll when audio is generating (fileId exists, no filePath) ──
+  useEffect(() => {
+    if (!fileId || localFilePath || !lessonId) return;
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await apiClient.get(`/lesson-files/${lessonId}`);
+        const record = data.find((f) => f.id === fileId);
+        if (record && record.file_path) {
+          setLocalFilePath(record.file_path);
+        }
+      } catch { /* ignore polling errors */ }
+    }, 10000); // check every 10 seconds
+    return () => clearInterval(interval);
+  }, [fileId, localFilePath, lessonId]);
 
+  // ── Manual refresh check ────────────────────────────────────
+  const handleRefresh = async () => {
+    if (isChecking || !lessonId) return;
+    setIsChecking(true);
+    try {
+      const { data } = await apiClient.get(`/lesson-files/${lessonId}`);
+      const record = data.find((f) => f.id === fileId);
+      if (record && record.file_path) {
+        setLocalFilePath(record.file_path);
+      }
+    } catch { /* ignore */ }
+    setIsChecking(false);
+  };
+
+  // ── Generating state (fileId exists but no file yet) ───────
+  if (fileId && !localFilePath) {
+    return (
+      <div className="audio-player-container">
+        <div className="icon-wrapper">
+          <BsMusicNoteBeamed className="music-icon" style={{ animation: 'spin 2s linear infinite' }} />
+        </div>
+        <h3 className="track-title">{title || "AI Audio Lesson"}</h3>
+        <p className="track-subtitle">Generating your audio… this may take a few minutes.</p>
+        <button
+          onClick={handleRefresh}
+          disabled={isChecking}
+          style={{
+            marginTop: '0.75rem',
+            padding: '0.45rem 1.2rem',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.08)',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+          }}
+        >
+          {isChecking ? 'Checking…' : '🔄 Refresh to check'}
+        </button>
+      </div>
+    );
+  }
+
+  // ── Real audio player — stream directly from S3 pre-signed URL ─────
+  if (fileId && localFilePath) {
     return (
       <div className="audio-player-real">
         <div className="audio-player-real__icon">
@@ -50,18 +81,14 @@ const AudioPlayer = ({ title, filePath, fileId }) => {
           <p className="audio-player-real__title">{title || "AI Audio Lesson"}</p>
           <p className="audio-player-real__sub">AI Voice Lesson</p>
         </div>
-        {streamSrc ? (
-          <audio
-            controls
-            className="audio-player-real__element"
-            src={streamSrc}
-            preload="metadata"
-          >
-            Your browser does not support the audio element.
-          </audio>
-        ) : (
-          <p style={{ fontSize: '0.85rem', opacity: 0.6 }}>Loading audio…</p>
-        )}
+        <audio
+          controls
+          className="audio-player-real__element"
+          src={localFilePath}
+          preload="metadata"
+        >
+          Your browser does not support the audio element.
+        </audio>
       </div>
     );
   }

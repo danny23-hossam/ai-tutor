@@ -17,6 +17,11 @@ const AI_API_URL = process.env.AI_API_URL || 'http://localhost:8005';
 const ai = axios.create({
     baseURL: AI_API_URL,
     timeout: 300_000, // 5 minutes — OCR on large PDFs can be slow
+    headers: {
+        // Bypass ngrok's free-tier browser interstitial page.
+        // Without this, ngrok returns HTML instead of the API response.
+        'ngrok-skip-browser-warning': 'true',
+    },
 });
 
 /**
@@ -240,39 +245,45 @@ async function callPipelineTranscript(userId, documentId, lessonId, language = '
 }
 
 /**
- * Generate (or retrieve cached) TTS audio for a document.
- * Returns the raw audio buffer (WAV) or null.
+ * Prepare (or retrieve cached) TTS audio for a document.
+ * The pipeline generates the audio, stores it on S3, and returns a
+ * pre-signed URL the browser can stream directly.
  *
  * @param {string} userId
  * @param {string} documentId
  * @param {string} lessonId
  * @param {string} [language='ar']  en | ar
- * @returns {Promise<Buffer|null>} WAV audio bytes or null
+ * @returns {Promise<object|null>} { status, source, audio_url, expires_in, content_type, size_bytes, s3_key } or null
  */
-async function callPipelineAudio(userId, documentId, lessonId, language = 'ar') {
+async function callPipelineAudioPrepare(userId, documentId, lessonId, language = 'ar') {
     try {
-        const res = await ai.post('/pipeline/audio', {
+        const res = await ai.post('/pipeline/audio/prepare', {
             user_id: String(userId),
             document_id: String(documentId),
             lesson_id: String(lessonId),
             language,
         }, {
-            responseType: 'arraybuffer',
             timeout: 600_000, // 10 min — TTS on long transcripts is slow
         });
 
-        // Verify we actually got audio bytes back
-        const contentType = res.headers['content-type'] || '';
-        if (!contentType.includes('audio')) {
-            console.error('[aiService] Pipeline audio returned non-audio content-type:', contentType);
+        if (!res.data?.audio_url) {
+            console.error('[aiService] Pipeline audio/prepare returned no audio_url:', res.data);
             return null;
         }
 
-        return Buffer.from(res.data);
+        return res.data;
     } catch (err) {
-        console.error('[aiService] Pipeline audio failed:', err.message);
+        console.error('[aiService] Pipeline audio/prepare failed:', err.message);
         return null;
     }
+}
+
+/**
+ * @deprecated Use callPipelineAudioPrepare instead — old method downloaded raw WAV bytes.
+ */
+async function callPipelineAudio(userId, documentId, lessonId, language = 'ar') {
+    console.warn('[aiService] callPipelineAudio is deprecated — use callPipelineAudioPrepare');
+    return null;
 }
 
 // ── Legacy methods kept for backwards compatibility ────────────────────────
@@ -320,6 +331,7 @@ module.exports = {
     callPipelineQuestions,
     callPipelineAsk,
     callPipelineTranscript,
+    callPipelineAudioPrepare,
     callPipelineAudio,
     // Legacy (deprecated)
     callSummarize,

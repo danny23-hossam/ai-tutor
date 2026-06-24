@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import UploadedFile from "./UploadedFile";
 import VideoPlayer from "./VideoPlayer";
 import AudioPlayer from "./AudioPlayer";
@@ -8,6 +8,7 @@ import Quiz from "./Quiz";
 import "./LessonContent.css";
 import apiClient from "../../api/apiClient";
 import DomPurify from 'dompurify';
+import preprocessLatexHtml from '../../utils/preprocessLatexHtml';
 
 const TABS = [
   { key: "overview",   label: "Overview"   },
@@ -24,7 +25,18 @@ function LessonContent({ mode, selectedName, selectedFilePath, selectedFileId, c
   const [errorToast, setErrorToast] = useState(null);
   const toastTimerRef = useRef(null);
 
-  // Clear timer on unmount to prevent state update on dead component
+  // Preprocess LaTeX in the summary HTML synchronously so the very first
+  // paint already has rendered equations — no flash of raw LaTeX.
+  const processedSummary = useMemo(() => {
+    if (!summarize) return '';
+    const sanitized = DomPurify.sanitize(summarize, {
+      ADD_TAGS: ['div'],
+      ADD_ATTR: ['class'],
+    });
+    return preprocessLatexHtml(sanitized);
+  }, [summarize]);
+
+  // Clear timer on unmount
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   useEffect(() => {
@@ -114,7 +126,7 @@ function LessonContent({ mode, selectedName, selectedFilePath, selectedFileId, c
           />
         )}
         {mode === "audio" && (
-          <AudioPlayer title={selectedName} filePath={selectedFilePath} fileId={selectedFileId} />
+          <AudioPlayer title={selectedName} filePath={selectedFilePath} fileId={selectedFileId} lessonId={lessonId} />
         )}
       </div>
 
@@ -154,8 +166,14 @@ function LessonContent({ mode, selectedName, selectedFilePath, selectedFileId, c
                 disabled={!!generating}
                 aria-label={generating === 'summary' ? 'Regenerating summary' : 'Regenerate summary'}
               >
-                <span aria-hidden="true">{generating === 'summary' ? '⏳' : '🔄'}</span>
-                {generating === 'summary' ? ' Regenerating…' : ' Regenerate'}
+                {generating === 'summary' ? (
+                  <span className="regen-icon">⏳</span>
+                ) : (
+                  <span className="regen-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                  </span>
+                )}
+                {generating === 'summary' ? 'Regenerating…' : 'Regenerate'}
               </button>
             )}
           </div>
@@ -172,7 +190,7 @@ function LessonContent({ mode, selectedName, selectedFilePath, selectedFileId, c
           ) : summarize ? (
             <div
               className="lc-summary-body"
-              dangerouslySetInnerHTML={{ __html: DomPurify.sanitize(summarize) }}
+              dangerouslySetInnerHTML={{ __html: processedSummary }}
             />
           ) : (
             <div className="lc-empty-state">

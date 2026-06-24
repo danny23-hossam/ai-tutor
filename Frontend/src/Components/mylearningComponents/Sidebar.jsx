@@ -127,21 +127,20 @@ function Sidebar({ onCloseSidebar, onSelectContent, onFilesChanged, lessonId }) 
     if (!lessonId) return;
 
     if (type === 'audio') {
-      // For audio: call the full TTS pipeline endpoint which generates the
-      // WAV via the AI pipeline and stores it in Google Drive automatically.
-      showNotify('info', '🎙️ Generating audio… this may take a few minutes.');
+      // Audio generation is async — backend returns a placeholder immediately,
+      // then processes TTS + Drive upload in the background.
+      showNotify('info', '🎙️ Audio generation started — it will appear when ready.');
       try {
         const { data } = await apiClient.post('/ai-generations/audio', {
           lesson_id: lessonId,
-          language: 'ar', // default to Arabic; can be made configurable
+          language: 'ar',
         });
+        // Add the placeholder to the sidebar (file_path will be null initially)
         setFiles((prev) => [...prev, data.file]);
         setActiveId(data.file.id);
         onSelectContent('audio', data.file.name, data.file.file_path, data.file.id);
         setOpenAccordion('2');
-        showNotify('success', '✅ Audio generated successfully!');
         if (onFilesChanged) onFilesChanged();
-        if (onCloseSidebar) onCloseSidebar();
       } catch (err) {
         console.error('Audio generation failed:', err);
         showNotify('error', `Audio generation failed: ${err.response?.data?.message || err.message || 'Unknown error'}`);

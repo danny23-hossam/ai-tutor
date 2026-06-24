@@ -15,6 +15,9 @@ export default defineConfig({
         // MED-3: forward cookies through the proxy so HttpOnly cookies work in dev
         secure: false,
         cookieDomainRewrite: 'localhost',
+        // 10-min timeout for long AI pipeline requests (TTS audio can take minutes)
+        timeout: 600000,
+        proxyTimeout: 600000,
       },
     },
   },

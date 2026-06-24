@@ -5,10 +5,12 @@ import { BsX } from "react-icons/bs";
 import { BsRobot } from 'react-icons/bs';
 import { motion, AnimatePresence } from "framer-motion";
 import apiClient from "../../api/apiClient";
+import renderLatexText from '../../utils/renderLatexText';
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1];
 
 const AITutorPanel = ({ lessonId, lessonTitle }) => {
+
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -177,7 +179,7 @@ const AITutorPanel = ({ lessonId, lessonTitle }) => {
                 msg.sender === "user" ? "user-bubble ms-auto" : "ai-bubble-msg me-auto"
               } ${msg.isTyping ? "typing-indicator" : ""}`}
             >
-              {msg.text}
+              {msg.isTyping ? msg.text : renderLatexText(msg.text)}
             </div>
           ))}
         </div>
