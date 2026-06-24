@@ -1,4 +1,5 @@
 import os
+import threading
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ arabic_config = None
 
 english_model = None
 english_config = None
+tts_lock = threading.Lock()
 
 
 class TTSRequest(BaseModel):
@@ -80,14 +82,18 @@ def tts(req: TTSRequest):
                 detail=f"Model for language '{req.language}' is not loaded.",
             )
 
-        audio_path = generate_speech(
-            text=req.text,
-            language=selected_language,
-            model=selected_model,
-            config=selected_config,
-            root_dir=ROOT,
-            model_dir=selected_model_dir,
-        )
+        # XTTS keeps mutable GPU/model state during inference. Running two
+        # requests through the same loaded model concurrently can corrupt the
+        # CUDA execution path and surface as low-level index assertions.
+        with tts_lock:
+            audio_path = generate_speech(
+                text=req.text,
+                language=selected_language,
+                model=selected_model,
+                config=selected_config,
+                root_dir=ROOT,
+                model_dir=selected_model_dir,
+            )
 
         return FileResponse(
             audio_path,

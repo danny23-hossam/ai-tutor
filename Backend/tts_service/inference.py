@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import unicodedata
 import uuid
 
 import torch
@@ -10,6 +11,48 @@ from torch.serialization import safe_globals
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts, XttsArgs, XttsAudioConfig
 from TTS.config.shared_configs import BaseDatasetConfig
+
+
+MOJIBAKE_MARKERS = ("Ø", "Ù", "Ð", "Ñ", "â", "Ã", "Â")
+
+SYMBOL_REPLACEMENTS = {
+    "α": " alpha ",
+    "β": " beta ",
+    "γ": " gamma ",
+    "δ": " delta ",
+    "Δ": " delta ",
+    "ε": " epsilon ",
+    "λ": " lambda ",
+    "μ": " mu ",
+    "π": " pi ",
+    "σ": " sigma ",
+    "θ": " theta ",
+    "∞": " infinity ",
+    "×": " times ",
+    "÷": " divided by ",
+    "·": " times ",
+    "≤": " less than or equal to ",
+    "≥": " greater than or equal to ",
+    "≠": " not equal to ",
+    "≈": " approximately ",
+    "→": " to ",
+    "←": " from ",
+    "↔": " to and from ",
+    "⇒": " implies ",
+    "∑": " summation ",
+    "√": " square root ",
+    "∈": " in ",
+    "∉": " not in ",
+    "∩": " intersection ",
+    "∪": " union ",
+    "–": " ",
+    "—": " ",
+    "−": " minus ",
+    "“": '"',
+    "”": '"',
+    "‘": "'",
+    "’": "'",
+}
 
 
 # ---------------------------------------------------------------------
@@ -71,7 +114,9 @@ def clean_tts_text(text: str) -> str:
     if not text:
         return ""
 
-    text = text.strip()
+    text = repair_common_mojibake(text.strip())
+    text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[\u0610-\u061a\u0640\u064b-\u065f\u0670\u06d6-\u06ed]", "", text)
 
     # Normalize different marker styles
     text = re.sub(r"\[pause\]", " [PAUSE] ", text, flags=re.IGNORECASE)
@@ -130,13 +175,19 @@ def clean_tts_text(text: str) -> str:
     text = re.sub(r"\\min", " min ", text)
     text = re.sub(r"\\exp", " exp ", text)
 
-    # Common symbols
-    text = text.replace("α", " alpha ")
-    text = text.replace("β", " beta ")
-    text = text.replace("ε", " epsilon ")
-    text = text.replace("∞", " infinity ")
-    text = text.replace("×", " times ")
-    text = text.replace("·", " times ")
+    # Common math and typography symbols. XTTS can fail hard on some symbols
+    # that survive tokenization, especially in mixed Arabic/math transcripts.
+    for old, new in SYMBOL_REPLACEMENTS.items():
+        text = text.replace(old, new)
+
+    text = re.sub(r"\b([A-Za-z])\s*_\s*([A-Za-z0-9]+)\b", r"\1 sub \2", text)
+    text = re.sub(r"\b([A-Za-z])\s*\^\s*([A-Za-z0-9]+)\b", r"\1 power \2", text)
+    text = re.sub(r"(?<=\w)_(?=\w)", " sub ", text)
+    text = re.sub(r"(?<=\w)\^(?=\w)", " power ", text)
+    text = text.replace("=", " equals ")
+    text = text.replace("<", " less than ")
+    text = text.replace(">", " greater than ")
+    text = text.replace("/", " over ")
     text = text.replace("^", " power ")
 
     # Make some frequent AI terms stay readable in English
@@ -166,6 +217,17 @@ def clean_tts_text(text: str) -> str:
     text = text.replace("{", " ")
     text = text.replace("}", " ")
 
+    # Drop control characters and symbols that are not useful for narration.
+    text = "".join(
+        " "
+        if (
+            unicodedata.category(char).startswith("C")
+            or unicodedata.category(char).startswith("S")
+        )
+        else char
+        for char in text
+    )
+
     # Clean duplicate punctuation/spaces
     text = re.sub(r"\s+", " ", text)
 
@@ -174,6 +236,64 @@ def clean_tts_text(text: str) -> str:
     text = text.replace("[ TRANSITION ]", "[TRANSITION]")
 
     return text.strip()
+
+
+def repair_common_mojibake(text: str) -> str:
+    """
+    Repair common UTF-8-as-Latin-1/Windows-1252 mojibake when it genuinely
+    arrives in request text. Correct Arabic text is left unchanged.
+    """
+
+    if not text or not any(marker in text for marker in MOJIBAKE_MARKERS):
+        return text
+
+    candidates = [text]
+
+    for encoding in ("latin-1", "cp1252"):
+        try:
+            candidates.append(text.encode(encoding).decode("utf-8"))
+        except UnicodeError:
+            pass
+
+    def score(candidate: str) -> int:
+        arabic_count = sum("\u0600" <= char <= "\u06ff" for char in candidate)
+        mojibake_count = sum(candidate.count(marker) for marker in MOJIBAKE_MARKERS)
+        replacement_count = candidate.count("\ufffd")
+        return arabic_count * 3 - mojibake_count * 4 - replacement_count * 10
+
+    return max(candidates, key=score)
+
+
+def split_long_sentence(sentence: str, max_chars: int) -> list[str]:
+    words = sentence.split()
+
+    if not words:
+        return []
+
+    chunks = []
+    current = ""
+
+    for word in words:
+        if len(word) > max_chars:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.extend(word[i:i + max_chars] for i in range(0, len(word), max_chars))
+            continue
+
+        candidate = f"{current} {word}".strip() if current else word
+
+        if len(candidate) <= max_chars:
+            current = candidate
+        else:
+            if current:
+                chunks.append(current)
+            current = word
+
+    if current:
+        chunks.append(current)
+
+    return chunks
 
 
 # ---------------------------------------------------------------------
@@ -244,8 +364,7 @@ def split_text_with_pauses(text: str, max_chars: int = 165):
                     })
                     current = ""
 
-                for i in range(0, len(sentence), max_chars):
-                    small_part = sentence[i:i + max_chars].strip()
+                for small_part in split_long_sentence(sentence, max_chars):
                     if small_part:
                         final_items.append({
                             "type": "text",
@@ -306,7 +425,8 @@ def infer_long_text(
     if not items:
         raise ValueError("Empty text after cleaning/splitting.")
 
-    #print(f"Generating speech for {len(items)} text/pause items...")
+    text_item_count = sum(item["type"] == "text" for item in items)
+    print(f"Generating speech for {len(items)} text/pause items ({text_item_count} text chunks)...")
 
     # Compute speaker conditioning once per request
     gpt_latent, speaker_emb = model.get_conditioning_latents(
@@ -327,17 +447,23 @@ def infer_long_text(
         chunk = item["content"]
         text_chunk_count += 1
 
-        #print(f"Generating text chunk {text_chunk_count}: {chunk[:80]}")
+        print(f"Generating text chunk {text_chunk_count}/{text_item_count}: {chunk[:120]}")
 
-        out = model.inference(
-            chunk,
-            language,
-            gpt_cond_latent=gpt_latent,
-            speaker_embedding=speaker_emb,
-            temperature=0.7,
-            repetition_penalty=10.0,
-            enable_text_splitting=False,
-        )
+        try:
+            out = model.inference(
+                chunk,
+                language,
+                gpt_cond_latent=gpt_latent,
+                speaker_embedding=speaker_emb,
+                temperature=0.7,
+                repetition_penalty=10.0,
+                enable_text_splitting=False,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"TTS inference failed at text chunk "
+                f"{text_chunk_count}/{text_item_count}: {chunk[:160]!r}"
+            ) from exc
 
         wav = torch.tensor(out["wav"]).float().cpu()
         audio_parts.append(wav)
@@ -349,10 +475,16 @@ def infer_long_text(
     if not audio_parts:
         raise ValueError("No audio parts were generated.")
 
-    full_wav = torch.cat(audio_parts, dim=0).unsqueeze(0)
+    full_wav = torch.cat(audio_parts, dim=0).clamp(-1.0, 1.0).unsqueeze(0)
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    torchaudio.save(out_path, full_wav, sample_rate)
+    torchaudio.save(
+        out_path,
+        full_wav,
+        sample_rate,
+        encoding="PCM_S",
+        bits_per_sample=16,
+    )
 
     return out_path
 
@@ -399,7 +531,7 @@ def generate_speech(
         speaker_wav=speaker_wav,
         out_path=output_path,
         language=language,
-        max_chars=165,
+        max_chars=120 if language == "ar" else 165,
     )
 
     t2 = time.perf_counter()

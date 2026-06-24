@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     chunk_size: int = 1200
     chunk_overlap: int = 150
     generation_max_chars: int = 24000
+    aws_region: str | None = None
+    s3_audio_bucket: str | None = None
+    s3_audio_prefix: str = "audio"
     class Config:
         env_file = ".env"
         extra = "ignore"

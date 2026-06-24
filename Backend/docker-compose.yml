@@ -78,6 +78,8 @@ services:
     ports:
       - "8002:8000"
     volumes:
+      - ./tts_service/app.py:/app/app.py:ro
+      - ./tts_service/inference.py:/app/inference.py:ro
       - ./tts_service/arabic_model:/app/arabic_model
       - ./tts_service/english_model:/app/english_model
       - ./tts_service/outputs:/app/outputs
@@ -130,6 +132,8 @@ services:
       RAG_SERVICE_URL: http://rag_service:8000
       TTS_SERVICE_URL: http://tts_service:8000
       DOCUMENT_SERVICE_URL: http://document_service:8000
+    volumes:
+      - ./pipeline_service/app:/app/app:ro
     depends_on:
       - text_service
       - vector_database_service
