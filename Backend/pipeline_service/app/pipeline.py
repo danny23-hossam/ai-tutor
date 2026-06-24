@@ -1,6 +1,38 @@
-from app import clients
+import asyncio
+
+from app import audio_storage, clients
 from app.chuncking import chunk_text
 from app.config import settings
+
+
+class PipelineError(Exception):
+    status_code = 400
+
+    def __init__(self, message: str, status_code: int | None = None):
+        super().__init__(message)
+        if status_code is not None:
+            self.status_code = status_code
+
+
+class DocumentNotFoundError(PipelineError):
+    def __init__(self, document_id: str):
+        super().__init__(
+            f"Document '{document_id}' does not exist. "
+            f"Add it first using /pipeline/documents/add-text.",
+            status_code=404,
+        )
+
+
+class InvalidPipelineStateError(PipelineError):
+    status_code = 409
+
+
+class AudioUrlUnavailableError(PipelineError):
+    def __init__(self):
+        super().__init__(
+            "Audio URL playback requires S3 audio storage to be configured.",
+            status_code=409,
+        )
 
 
 def public_document(document: dict) -> dict:
@@ -30,15 +62,12 @@ async def get_document_text_or_fail(document_id: str) -> str:
     document = await clients.get_document(document_id)
 
     if not document:
-        raise ValueError(
-            f"Document '{document_id}' does not exist. "
-            f"Add it first using /pipeline/documents/add-text."
-        )
+        raise DocumentNotFoundError(document_id)
 
     full_text = document.get("full_text")
 
     if not full_text:
-        raise ValueError(f"Document '{document_id}' exists but has no full_text.")
+        raise InvalidPipelineStateError(f"Document '{document_id}' exists but has no full_text.")
 
     return full_text
 
@@ -423,6 +452,26 @@ async def transcript_pipeline(
             "transcript": cached_transcript,
         }
 
+    stored_transcript = await generate_and_store_transcript(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language=language,
+    )
+
+    return {
+        "source": "generated",
+        "transcript": stored_transcript,
+    }
+
+
+async def generate_and_store_transcript(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+    language: str,
+):
     text = text_for_generation(await get_document_text_or_fail(document_id))
 
     if language == "ar":
@@ -452,10 +501,7 @@ async def transcript_pipeline(
         transcript_text=transcript_text,
     )
 
-    return {
-        "source": "generated",
-        "transcript": stored_transcript,
-    }
+    return stored_transcript
 
 
 async def ask_pipeline(
@@ -482,29 +528,294 @@ async def audio_pipeline(
 ):
     """
     Audio flow:
-    1. Return cached audio from DB when it exists.
-    2. Ensure a transcript exists, generating and storing it if needed.
-    3. Generate audio from TTS, cache it in DB, and return it.
+    1. Check S3 for cached audio when S3 audio storage is configured.
+    2. Fall back to DB audio cache when S3 is not configured.
+    2. Check DB for a transcript.
+    3. If no transcript exists, generate it from the document and store it.
+    4. Generate audio from the transcript, store it in S3 or DB, and return it.
     """
 
-    cached_audio = await clients.get_audio(
+    s3_key = None
+
+    if audio_storage.is_s3_audio_enabled():
+        s3_key = audio_storage.build_audio_key(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language=language,
+        )
+
+        cached_audio = await asyncio.to_thread(audio_storage.get_audio_bytes, s3_key)
+
+        if cached_audio:
+            return {
+                "audio_bytes": cached_audio,
+                "metadata": {
+                    "user_id": user_id,
+                    "lesson_id": lesson_id,
+                    "document_id": document_id,
+                    "language": language,
+                    "source": "cache",
+                    "audio_storage": "s3",
+                    "s3_bucket": settings.s3_audio_bucket,
+                    "s3_key": s3_key,
+                    "audio_size_bytes": len(cached_audio),
+                },
+            }
+
+    else:
+        cached_audio = await clients.get_audio(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language=language,
+        )
+
+        if cached_audio:
+            return {
+                "audio_bytes": cached_audio,
+                "metadata": {
+                    "user_id": user_id,
+                    "lesson_id": lesson_id,
+                    "document_id": document_id,
+                    "language": language,
+                    "source": "cache",
+                    "audio_storage": "database",
+                    "audio_size_bytes": len(cached_audio),
+                },
+            }
+
+    transcript = await clients.get_transcript(
         user_id=user_id,
         lesson_id=lesson_id,
         document_id=document_id,
         language=language,
     )
 
-    if cached_audio:
+    if not transcript:
+        transcript = await generate_and_store_transcript(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language=language,
+        )
+
+    transcript_text = transcript.get("transcript_text")
+
+    if not transcript_text:
+        raise InvalidPipelineStateError("Transcript exists in DB but transcript_text is empty.")
+
+    audio_bytes = await clients.generate_audio(
+        transcript_text=transcript_text,
+        language=language,
+    )
+
+    if audio_storage.is_s3_audio_enabled():
+        if s3_key is None:
+            s3_key = audio_storage.build_audio_key(
+                user_id=user_id,
+                lesson_id=lesson_id,
+                document_id=document_id,
+                language=language,
+            )
+
+        stored_audio = await asyncio.to_thread(
+            audio_storage.put_audio_bytes,
+            s3_key,
+            audio_bytes,
+            "audio/wav",
+        )
+        audio_storage_name = "s3"
+    else:
+        stored_audio = await clients.store_audio(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language=language,
+            audio_bytes=audio_bytes,
+            mime_type="audio/wav",
+        )
+        audio_storage_name = "database"
+
+    return {
+        "audio_bytes": audio_bytes,
+        "metadata": {
+            "user_id": user_id,
+            "lesson_id": lesson_id,
+            "document_id": document_id,
+            "language": language,
+            "source": "generated",
+            "audio_storage": audio_storage_name,
+            "audio_cache": stored_audio,
+            "audio_size_bytes": len(audio_bytes),
+        },
+    }
+
+
+async def audio_url_pipeline(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+    language: str,
+    expires_in: int = 3600,
+):
+    """
+    Ensure audio exists in S3 and return a presigned URL for browser playback.
+    This avoids sending large WAV files through the API server or frontend JS.
+    """
+
+    if not audio_storage.is_s3_audio_enabled():
+        raise AudioUrlUnavailableError()
+
+    s3_key = audio_storage.build_audio_key(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language=language,
+    )
+
+    audio_metadata = await asyncio.to_thread(audio_storage.get_audio_metadata, s3_key)
+    source = "cache"
+
+    if not audio_metadata:
+        transcript = await clients.get_transcript(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language=language,
+        )
+
+        if not transcript:
+            transcript = await generate_and_store_transcript(
+                user_id=user_id,
+                lesson_id=lesson_id,
+                document_id=document_id,
+                language=language,
+            )
+
+        transcript_text = transcript.get("transcript_text")
+
+        if not transcript_text:
+            raise InvalidPipelineStateError("Transcript exists in DB but transcript_text is empty.")
+
+        audio_bytes = await clients.generate_audio(
+            transcript_text=transcript_text,
+            language=language,
+        )
+
+        stored_audio = await asyncio.to_thread(
+            audio_storage.put_audio_bytes,
+            s3_key,
+            audio_bytes,
+            "audio/wav",
+        )
+
+        audio_metadata = {
+            "content_length": stored_audio["size_bytes"],
+            "content_type": stored_audio["mime_type"],
+        }
+        source = "generated"
+
+    audio_url = await asyncio.to_thread(
+        audio_storage.create_presigned_audio_url,
+        s3_key,
+        expires_in,
+    )
+
+    return {
+        "status": "ready",
+        "source": source,
+        "audio_url": audio_url,
+        "expires_in": expires_in,
+        "content_type": audio_metadata.get("content_type") or "audio/wav",
+        "size_bytes": audio_metadata.get("content_length"),
+        "s3_key": s3_key,
+    }
+
+
+async def audio_url_status_pipeline(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+    language: str,
+    expires_in: int = 3600,
+):
+    """
+    Return a presigned audio URL only when the S3 object already exists.
+    This call is intentionally fast and does not generate audio.
+    """
+
+    if not audio_storage.is_s3_audio_enabled():
+        raise AudioUrlUnavailableError()
+
+    s3_key = audio_storage.build_audio_key(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language=language,
+    )
+
+    audio_metadata = await asyncio.to_thread(audio_storage.get_audio_metadata, s3_key)
+
+    if not audio_metadata:
         return {
-            "audio_bytes": cached_audio,
-            "metadata": {
-                "user_id": user_id,
-                "lesson_id": lesson_id,
-                "document_id": document_id,
-                "language": language,
-                "source": "cache",
-                "audio_size_bytes": len(cached_audio),
-            },
+            "status": "processing",
+            "source": "pending",
+            "audio_url": None,
+            "expires_in": expires_in,
+            "content_type": "audio/wav",
+            "size_bytes": None,
+            "s3_key": s3_key,
+        }
+
+    audio_url = await asyncio.to_thread(
+        audio_storage.create_presigned_audio_url,
+        s3_key,
+        expires_in,
+    )
+
+    return {
+        "status": "ready",
+        "source": "cache",
+        "audio_url": audio_url,
+        "expires_in": expires_in,
+        "content_type": audio_metadata.get("content_type") or "audio/wav",
+        "size_bytes": audio_metadata.get("content_length"),
+        "s3_key": s3_key,
+    }
+
+
+async def ensure_audio_generated_pipeline(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+    language: str,
+):
+    """
+    Generate and upload audio to S3 if it is missing. This is intended to run
+    as a background task so frontend requests do not stay open for TTS.
+    """
+
+    if not audio_storage.is_s3_audio_enabled():
+        raise AudioUrlUnavailableError()
+
+    s3_key = audio_storage.build_audio_key(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language=language,
+    )
+
+    audio_metadata = await asyncio.to_thread(audio_storage.get_audio_metadata, s3_key)
+    if audio_metadata:
+        return {
+            "status": "ready",
+            "source": "cache",
+            "s3_key": s3_key,
+            "size_bytes": audio_metadata.get("content_length"),
         }
 
     transcript = await clients.get_transcript(
@@ -515,44 +826,35 @@ async def audio_pipeline(
     )
 
     if not transcript:
-        transcript_result = await transcript_pipeline(
+        transcript = await generate_and_store_transcript(
             user_id=user_id,
             lesson_id=lesson_id,
             document_id=document_id,
             language=language,
         )
-        transcript = transcript_result["transcript"]
 
     transcript_text = transcript.get("transcript_text")
 
     if not transcript_text:
-        raise ValueError("Transcript exists in DB but transcript_text is empty.")
+        raise InvalidPipelineStateError("Transcript exists in DB but transcript_text is empty.")
 
     audio_bytes = await clients.generate_audio(
         transcript_text=transcript_text,
         language=language,
     )
 
-    stored_audio = await clients.store_audio(
-        user_id=user_id,
-        lesson_id=lesson_id,
-        document_id=document_id,
-        language=language,
-        audio_bytes=audio_bytes,
-        mime_type="audio/wav",
+    stored_audio = await asyncio.to_thread(
+        audio_storage.put_audio_bytes,
+        s3_key,
+        audio_bytes,
+        "audio/wav",
     )
 
     return {
-        "audio_bytes": audio_bytes,
-        "metadata": {
-            "user_id": user_id,
-            "lesson_id": lesson_id,
-            "document_id": document_id,
-            "language": language,
-            "source": "generated",
-            "audio_cache": stored_audio,
-            "audio_size_bytes": len(audio_bytes),
-        },
+        "status": "ready",
+        "source": "generated",
+        "s3_key": s3_key,
+        "size_bytes": stored_audio["size_bytes"],
     }
 
 
