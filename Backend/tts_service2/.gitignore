@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+models_cache/
+Namaa_tts/
+english_model/cache/
+outputs/*
+!outputs/.gitkeep
+*.wav
+!arabic_model/reference.wav
+*.log

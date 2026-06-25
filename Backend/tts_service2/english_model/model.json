@@ -1,0 +1,16 @@
+{
+  "name": "Regular Chatterbox English",
+  "language": "en",
+  "engine": "chatterbox-tts",
+  "model_repo": "ResembleAI/chatterbox",
+  "checkpoint_files": [
+    "ve.safetensors",
+    "t3_cfg.safetensors",
+    "s3gen.safetensors",
+    "tokenizer.json",
+    "conds.pt"
+  ],
+  "cache_dir": "cache",
+  "reference_wav": null,
+  "notes": "Uses the regular Chatterbox model with its built-in default voice unless TTS_ENGLISH_REFERENCE_WAV is set."
+}
