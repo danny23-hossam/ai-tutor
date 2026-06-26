@@ -1,0 +1,13 @@
+{
+  "name": "Egyptian Arabic AliAbdallah Chatterbox + Dahih LoRA",
+  "language": "ar",
+  "engine": "chatterbox-multilingual",
+  "base_runtime_repo": "ResembleAI/chatterbox",
+  "start_checkpoint_repo": "AliAbdallah/egyptian-arabic-tts-chatterbox",
+  "start_checkpoint_file": "model.safetensors",
+  "adapter_repo": "YomnaGharib/namaa-dahih-egyptian-lora",
+  "adapter_subfolder": "latest",
+  "default_cache": "../../../../../models_cache/namaa_dahih_lora_hf",
+  "reference_wav": "reference.wav",
+  "notes": "Large checkpoint and adapter files are loaded from the model cache, not stored in this folder."
+}

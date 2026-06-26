@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+pydantic
+numpy
+spacy-pkuseg
+conformer
+diffusers
+librosa
+pykakasi
+resemble-perth
+s3tokenizer
+safetensors
+soundfile
+huggingface_hub
+hf_xet
+pandas
+transformers

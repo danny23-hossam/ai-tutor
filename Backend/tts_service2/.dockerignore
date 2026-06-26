@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+outputs/
+!outputs/.gitkeep
+models_cache/
+english_model/cache/
+Namaa_tts/
+*.ipynb
+.env
