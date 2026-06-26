@@ -45,9 +45,9 @@ def get_target_count(qty) -> int:
 
 def get_system_prompt(count: int, diff: str = "standard") -> str:
     difficulty = (
-        "hard: prefer inference, comparison, and synthesis"
+        "hard: require inference, comparison, synthesis, and application of core ideas"
         if diff == "hard"
-        else "standard: prefer clear concepts, facts, definitions, and mechanisms"
+        else "standard: prefer important concepts, definitions, mechanisms, and relationships"
     )
 
     return (
@@ -57,7 +57,15 @@ def get_system_prompt(count: int, diff: str = "standard") -> str:
         "Return only valid compact JSON, no markdown, no code fence.\n"
         'Schema: {"flashcards":[{"question":"...","answer":"..."}]}\n'
         "Rules: question and answer must be non-empty strings; answer should be concise; "
-        "do not invent facts; avoid duplicates."
+        "do not invent facts; avoid duplicates. "
+        "Focus only on the core points of the lecture: main concepts, mechanisms, definitions, relationships, "
+        "important examples, causes/effects, comparisons, and takeaways. "
+        "Generate related flashcards that connect ideas across the same topic, not isolated trivia. "
+        "Prefer hard, understanding-based cards over recall-only cards. "
+        "Ask about why, how, differences, consequences, applications, and common misconceptions when supported by the text. "
+        "Do not create cards from lecture intro/admin details such as dates, due dates, deadlines, schedules, instructor names, "
+        "course logistics, greetings, announcements, page numbers, references, or file metadata. "
+        "Avoid minor facts unless they are essential to understanding the core topic."
     )
 
 

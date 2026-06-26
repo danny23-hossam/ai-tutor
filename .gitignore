@@ -57,6 +57,9 @@ Backend/google-service-account.json
 Backend/tts_service/__pycache__/
 Backend/tts_service/outputs
 Backend/tts_service/*.pyc
+Backend/models_cache/
+Backend/tts_service2/outputs/
+Backend/tts_service2/english_model/cache/
 
 
 model/

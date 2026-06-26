@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install -U pip setuptools wheel && \
     pip install \
-    torch==2.6.0 torchaudio==2.6.0 \
-    --index-url https://download.pytorch.org/whl/cu124 && \
+    torch==2.7.0 torchaudio==2.7.0 \
+    --index-url https://download.pytorch.org/whl/cu128 && \
     pip install -r requirements.txt && \
     pip install --no-deps chatterbox-tts==0.1.3
 

@@ -333,6 +333,29 @@ RULES:
 """
 
 
+TRANSLATION_CONTINUITY_FIRST = """
+CONTINUITY RULES:
+- This is the first part of one continuous audio transcript.
+- Do not add any later restart, second intro, title, or new-episode wording.
+"""
+
+TRANSLATION_CONTINUITY_MID = """
+CONTINUITY RULES:
+- This is the middle of one continuous audio transcript, split only for processing.
+- Do NOT restart the narration, add a new greeting, welcome sentence, title, or episode opening.
+- Continue naturally from the previous idea as if there was no chunk boundary.
+- Keep the same narrator voice, pace, and flow across all chunks.
+"""
+
+TRANSLATION_CONTINUITY_LAST = """
+CONTINUITY RULES:
+- This is the final part of one continuous audio transcript, split only for processing.
+- Do NOT restart the narration, add a new greeting, welcome sentence, title, or episode opening.
+- Continue naturally from the previous idea as if there was no chunk boundary.
+- Only the final ending should sound like a conclusion.
+"""
+
+
 def step1_translate(english_script: str) -> str:
     """
     Step 1: Pure English → Arabic translation, no style applied.
@@ -350,10 +373,13 @@ def step1_translate(english_script: str) -> str:
 
         if num_chunks == 1 or idx == 1:
             system_prompt = TRANSLATE_PROMPT_FIRST
+            system_prompt += TRANSLATION_CONTINUITY_FIRST
         elif idx == num_chunks:
             system_prompt = TRANSLATE_PROMPT_LAST
+            system_prompt += TRANSLATION_CONTINUITY_LAST
         else:
             system_prompt = TRANSLATE_PROMPT_MID
+            system_prompt += TRANSLATION_CONTINUITY_MID
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -474,6 +500,34 @@ STYLE EXAMPLES:
 """
 
 
+STYLE_CONTINUITY_FIRST = """
+CONTINUITY RULES:
+- This is the first part of one continuous audio transcript.
+- Do not add any later restart, second intro, title, or new-episode wording.
+"""
+
+STYLE_CONTINUITY_MID = """
+CONTINUITY RULES:
+- This is the middle of one continuous audio transcript, not a new audio.
+- Do NOT add any greeting, welcome, title, intro, or restart phrase.
+- Do NOT write anything that sounds like a new episode or a new lecture beginning.
+- Do NOT say phrases like "now we start", "in this section", "let us begin", or similar restart wording.
+- Continue directly from the previous idea with natural flow.
+- Do not recap what was already explained unless needed in one short linking phrase.
+- Keep the same narrator voice and pacing.
+"""
+
+STYLE_CONTINUITY_LAST = """
+CONTINUITY RULES:
+- This is the final part of one continuous audio transcript, not a new audio.
+- Do NOT add any greeting, welcome, title, intro, or restart phrase.
+- Do NOT write anything that sounds like a new episode or a new lecture beginning.
+- Continue directly from the previous idea with natural flow.
+- Keep the same narrator voice and pacing.
+- Only the final ending should sound like a conclusion.
+"""
+
+
 def step2_apply_style(raw_arabic: str) -> str:
     """
     Step 2: Takes the raw Arabic from Step 1 and rewrites it
@@ -499,10 +553,13 @@ def step2_apply_style(raw_arabic: str) -> str:
 
         if num_chunks == 1 or idx == 1:
             system_prompt = STYLE_PROMPT_FIRST.format(few_shot_block=few_shot_block)
+            system_prompt += STYLE_CONTINUITY_FIRST
         elif idx == num_chunks:
             system_prompt = STYLE_PROMPT_LAST.format(few_shot_block=few_shot_block)
+            system_prompt += STYLE_CONTINUITY_LAST
         else:
             system_prompt = STYLE_PROMPT_MID.format(few_shot_block=few_shot_block)
+            system_prompt += STYLE_CONTINUITY_MID
 
         messages = [
             {"role": "system", "content": system_prompt},

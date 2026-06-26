@@ -69,20 +69,24 @@ services:
 
   # -----------------------------
   # XTTS Service
-  # Uses your already-built image.
-  # Do NOT build it again for now.
+  # TTS service backed by tts_service2.
   # -----------------------------
   tts_service:
-    image: xtts-fastapi:latest
+    build:
+      context: ./tts_service2
+    image: tts-service2:latest
     container_name: tts_service
     ports:
       - "8002:8000"
+    environment:
+      TTS_MODEL_CACHE: /app/models_cache/namaa_dahih_lora_hf
+      TTS_OUTPUT_DIR: /app/outputs
+      TTS_ARABIC_REFERENCE_WAV: /app/arabic_model/reference.wav
+      HF_TOKEN: ${HF_TOKEN:-}
     volumes:
-      - ./tts_service/app.py:/app/app.py:ro
-      - ./tts_service/inference.py:/app/inference.py:ro
-      - ./tts_service/arabic_model:/app/arabic_model
-      - ./tts_service/english_model:/app/english_model
-      - ./tts_service/outputs:/app/outputs
+      - ./tts_service2/outputs:/app/outputs
+      - ./tts_service2/english_model/cache:/app/english_model/cache
+      - ./models_cache/namaa_dahih_lora_hf:/app/models_cache/namaa_dahih_lora_hf
     gpus: all
     restart: unless-stopped
 
@@ -130,6 +134,8 @@ services:
       TEXT_SERVICE_URL: http://text_service:8000
       DATABASE_SERVICE_URL: http://vector_database_service:8000
       RAG_SERVICE_URL: http://rag_service:8000
+      # To use TTS from another device, replace this with:
+      # TTS_SERVICE_URL: ${TTS_SERVICE_URL:-http://tts_service:8000}
       TTS_SERVICE_URL: http://tts_service:8000
       DOCUMENT_SERVICE_URL: http://document_service:8000
     volumes:

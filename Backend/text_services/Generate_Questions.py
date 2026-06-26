@@ -3,6 +3,7 @@ import time
 import re
 import traceback
 import json
+import random
 from openai import OpenAI
 
 # ─────────────────────────── Configuration ───────────────────────────
@@ -41,9 +42,9 @@ def get_target_count(qty) -> int:
 
 def get_system_prompt(count: int, diff: str) -> str:
     difficulty = (
-        "hard: use inference, comparison, and synthesis"
+        "hard: require inference, comparison, synthesis, and application of core ideas"
         if diff == "hard"
-        else "standard: use clear facts, concepts, definitions, and mechanisms"
+        else "standard: use important concepts, definitions, mechanisms, relationships, and applications"
     )
 
     return (
@@ -58,7 +59,21 @@ def get_system_prompt(count: int, diff: str) -> str:
         '{"key":"a","text":"Correct: ..."},{"key":"b","text":"Incorrect: ..."},'
         '{"key":"c","text":"Incorrect: ..."},{"key":"d","text":"Incorrect: ..."}]}]}\n'
         "Rules: use only the source text; no all/none-of-the-above; plausible distractors; "
-        "non-empty strings; answer must be a, b, c, or d; avoid duplicates."
+        "non-empty strings; answer must be a, b, c, or d; avoid duplicates. "
+        "Focus only on the core points of the lecture: main concepts, mechanisms, definitions, relationships, "
+        "important examples, causes/effects, comparisons, applications, and takeaways. "
+        "Generate related questions that connect ideas across the same topic, not isolated trivia. "
+        "Prefer hard, understanding-based questions over recall-only questions. "
+        "Ask about why, how, differences, consequences, applications, and common misconceptions when supported by the text. "
+        "Avoid minor details unless they are necessary to understand the topic. "
+        "Do not ask from lecture intro/admin details such as dates, due dates, deadlines, schedules, instructor names, "
+        "course logistics, greetings, announcements, page numbers, references, or file metadata. "
+        "If the source text contains numbers, formulas, units, calculations, algorithms, or quantitative relationships, "
+        "include suitable numerical/application questions when they can be answered from the source text. "
+        "Make every option related to the same context and confusing enough to test understanding. "
+        "Distractors must be plausible misconceptions from the lecture context, not obviously unrelated answers. "
+        "Do not make the longest or most detailed option consistently correct; keep option lengths balanced. "
+        "Vary the correct answer position across a, b, c, and d; do not follow a predictable answer-key pattern."
     )
 
 def get_retry_prompt(count: int) -> str:
@@ -68,6 +83,10 @@ def get_retry_prompt(count: int) -> str:
     """
     return (
         f"Generate {count} MCQs. Output only JSON: "
+        "Focus only on core lecture points and related understanding, not isolated trivia or lecture intro/admin details. "
+        "Do not ask about dates, due dates, deadlines, schedules, greetings, announcements, page numbers, references, or metadata. "
+        "Include numerical/application questions only when supported by the text. "
+        "Use plausible context-related distractors. Keep option lengths balanced. Vary correct answer positions. "
         '{"questions":[{"id":1,"question":"...","options":[{"key":"a","text":"..."},'
         '{"key":"b","text":"..."},{"key":"c","text":"..."},{"key":"d","text":"..."}],'
         '"answer":"a","explanation_points":[{"key":"a","text":"Correct: ..."},'
@@ -332,6 +351,123 @@ def validate_question(q: dict, i: int):
             raise ValueError(f"Q{i} has an empty explanation_point text.")
 
 
+def shuffle_question_options(q: dict) -> dict:
+    pairs = []
+    explanations_by_key = {
+        e["key"]: e
+        for e in q["explanation_points"]
+    }
+
+    for option in q["options"]:
+        key = option["key"]
+        pairs.append({
+            "option": option,
+            "explanation": explanations_by_key.get(key),
+            "is_correct": key == q["answer"],
+        })
+
+    random.shuffle(pairs)
+
+    keys = ["a", "b", "c", "d"]
+    new_options = []
+    new_explanations = []
+    new_answer = q["answer"]
+
+    for idx, pair in enumerate(pairs):
+        new_key = keys[idx]
+        new_options.append({
+            "key": new_key,
+            "text": pair["option"]["text"],
+        })
+
+        explanation = pair["explanation"] or {"text": ""}
+        new_explanations.append({
+            "key": new_key,
+            "text": explanation["text"],
+        })
+
+        if pair["is_correct"]:
+            new_answer = new_key
+
+    q["options"] = new_options
+    q["explanation_points"] = new_explanations
+    q["answer"] = new_answer
+    return q
+
+
+def set_question_answer_key(q: dict, target_key: str) -> dict:
+    explanations_by_key = {
+        e["key"]: e
+        for e in q["explanation_points"]
+    }
+    correct_pair = None
+    incorrect_pairs = []
+
+    for option in q["options"]:
+        key = option["key"]
+        pair = {
+            "option": option,
+            "explanation": explanations_by_key.get(key),
+            "is_correct": key == q["answer"],
+        }
+
+        if pair["is_correct"]:
+            correct_pair = pair
+        else:
+            incorrect_pairs.append(pair)
+
+    if correct_pair is None or target_key not in ("a", "b", "c", "d"):
+        return q
+
+    random.shuffle(incorrect_pairs)
+
+    keys = ["a", "b", "c", "d"]
+    arranged = []
+    incorrect_idx = 0
+
+    for key in keys:
+        if key == target_key:
+            arranged.append(correct_pair)
+        else:
+            arranged.append(incorrect_pairs[incorrect_idx])
+            incorrect_idx += 1
+
+    new_options = []
+    new_explanations = []
+
+    for key, pair in zip(keys, arranged):
+        new_options.append({
+            "key": key,
+            "text": pair["option"]["text"],
+        })
+
+        explanation = pair["explanation"] or {"text": ""}
+        new_explanations.append({
+            "key": key,
+            "text": explanation["text"],
+        })
+
+    q["options"] = new_options
+    q["explanation_points"] = new_explanations
+    q["answer"] = target_key
+    return q
+
+
+def balance_answer_positions(questions: list[dict]) -> list[dict]:
+    keys = ["a", "b", "c", "d"]
+    target_keys = [keys[idx % len(keys)] for idx in range(len(questions))]
+    random.shuffle(target_keys)
+
+    balanced = []
+    for idx, q in enumerate(questions):
+        target_key = target_keys[idx]
+        q = set_question_answer_key(q, target_key)
+        validate_question(q, idx + 1)
+        balanced.append(q)
+
+    return balanced
+
+
 def parse_and_collect_valid_questions(raw: str) -> list:
     """Parse a chunk response and return only structurally valid questions."""
     data = extract_json_from_response(raw)
@@ -340,6 +476,8 @@ def parse_and_collect_valid_questions(raw: str) -> list:
     valid = []
     for i, q in enumerate(data["questions"], start=1):
         try:
+            validate_question(q, i)
+            q = shuffle_question_options(q)
             validate_question(q, i)
             valid.append(q)
         except ValueError as e:
@@ -430,6 +568,8 @@ def generate_questions(long_text: str, qty: str = "standard", diff: str = "stand
     # Trim if we got more than requested
     if len(collected) > target_count:
         collected = collected[:target_count]
+
+    collected = balance_answer_positions(collected)
 
     # Re-number IDs globally
     for i, q in enumerate(collected, start=1):

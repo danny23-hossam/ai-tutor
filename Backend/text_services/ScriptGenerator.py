@@ -27,6 +27,7 @@ Hard rules:
 5. Add [transition] markers after transition sentences.
 6. Start with: "Hello, my dear viewers, and welcome to a new audio of Papyrus," followed by a 1-3 sentence intro.
 7. No summary/recap at the end.
+8. This is the first part of one continuous audio transcript. Do not add any later restart, second intro, title, or new-episode wording.
 """
 
 PROMPT_MID = """
@@ -36,6 +37,11 @@ Hard rules:
 1. DO NOT start with an introduction; go straight to the topic.
 2. Follow all standard rules (short sentences, [pause], [transition], spoken equations).
 3. No summary/recap at the end.
+4. This is the middle of one continuous audio transcript, split only for processing.
+5. DO NOT restart the narration, add a new greeting, welcome sentence, title, or episode opening.
+6. DO NOT say phrases like "now we start", "in this section", "let us begin", or anything that sounds like a new audio.
+7. Continue naturally from the previous idea as if there was no chunk boundary.
+8. Keep the same narrator voice, pace, and flow across all chunks.
 """
 
 PROMPT_LAST = """
@@ -45,6 +51,10 @@ Hard rules:
 1. DO NOT start with an introduction; go straight to the topic.
 2. Follow all standard rules.
 3. At the end, include a 2–6 sentence closing summary and thank the listeners for listening.
+4. This is the final part of one continuous audio transcript, split only for processing.
+5. DO NOT restart the narration, add a new greeting, welcome sentence, title, or episode opening.
+6. Continue naturally from the previous idea as if there was no chunk boundary.
+7. Only the final ending should sound like a conclusion.
 """
 
 # ------------------------------- Helpers -------------------------------
