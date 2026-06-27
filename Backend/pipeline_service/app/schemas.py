@@ -36,6 +36,7 @@ class AskRequest(BasePipelineRequest):
 
 class TranscriptRequest(BasePipelineRequest):
     language: Literal["en", "ar"] = "ar"
+    force_regenerate: bool = False
     # en = English friendly script
     # ar = Egyptian Arabic TTS script
 

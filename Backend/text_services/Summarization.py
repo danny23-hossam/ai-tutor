@@ -4,11 +4,12 @@ import re
 # ------------------------------- Configuration -------------------------------
 MODEL_NAME = "openai/gpt-oss-20b"
 # Safe defaults: adjust if you know your org/model can accept more.
-MAX_INPUT_TOKENS = 2000  # token budget for the input chunk (approximate)
+MAX_INPUT_TOKENS = 1200  # token budget for the input chunk (approximate)
 SAFETY_MARGIN_TOKENS = 256  # reserved tokens for system/instruction/response overhead
 MAX_RETRIES = 4  # API call retry attempts for transient errors
 # max tokens for model to produce per chunk (if your client supports this param)
-CHUNK_RESPONSE_MAX_TOKENS = 2500
+CHUNK_RESPONSE_MAX_TOKENS = 1800
+GROQ_TPM_WAIT_SECONDS = 65
 API_KEY = dotenv.get_key(".env", "GROQ_API_KEY")
 # Import client class matching your earlier code
 # Make sure you installed `openai` package: pip install openai
@@ -72,8 +73,8 @@ SYSTEM_PROMPT_ALT = SYSTEM_PROMPT
 TRIGGER_CHUNK_COUNT = None
 TRIGGER_CHUNK_INDEX = None
 
-PARAGRAPHS_PER_CHUNK = 20
-ENFORCE_TOKEN_LIMIT_ON_GROUP = False
+PARAGRAPHS_PER_CHUNK = 8
+ENFORCE_TOKEN_LIMIT_ON_GROUP = True
 # ------------------------------- Token estimation -------------------------------
 def estimate_tokens(text: str) -> int:
     """
@@ -154,6 +155,11 @@ def call_chat_with_backoff(client, model, messages, max_retries=4, base_wait=1.0
             return resp
         except Exception as e:
             txt = str(e).lower()
+            if "tokens per minute" in txt or "rate_limit_exceeded" in txt:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(GROQ_TPM_WAIT_SECONDS)
+                continue
             # Non-retriable errors: request too large -> raise so upstream can handle chunking
             if "413" in txt or "request too large" in txt or "request entity too large" in txt:
                 raise

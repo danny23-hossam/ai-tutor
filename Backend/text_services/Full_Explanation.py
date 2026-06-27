@@ -6,16 +6,17 @@ import traceback
 # ------------------------------- Configuration -------------------------------
 MODEL_NAME = "openai/gpt-oss-20b"
 
-MAX_INPUT_TOKENS = 4000
+MAX_INPUT_TOKENS = 1200
 SAFETY_MARGIN_TOKENS = 256
 MAX_RETRIES = 4
-CHUNK_RESPONSE_MAX_TOKENS = 6000
+CHUNK_RESPONSE_MAX_TOKENS = 1800
+GROQ_TPM_WAIT_SECONDS = 65
 
 TRIGGER_CHUNK_COUNT = None
 TRIGGER_CHUNK_INDEX = None
 
-PARAGRAPHS_PER_CHUNK = 20
-ENFORCE_TOKEN_LIMIT_ON_GROUP = False
+PARAGRAPHS_PER_CHUNK = 8
+ENFORCE_TOKEN_LIMIT_ON_GROUP = True
 
 API_KEY = dotenv.get_key(".env", "GROQ_API_KEY")
 
@@ -263,6 +264,14 @@ def call_chat_with_backoff(
 
         except Exception as e:
             txt = str(e).lower()
+
+            if "tokens per minute" in txt or "rate_limit_exceeded" in txt:
+                if attempt == max_retries - 1:
+                    raise
+                wait = GROQ_TPM_WAIT_SECONDS
+                print(f"Groq TPM limit reached, retrying in {wait}s...")
+                time.sleep(wait)
+                continue
 
             if "413" in txt or "request too large" in txt or "request entity too large" in txt:
                 raise

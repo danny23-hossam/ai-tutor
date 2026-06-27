@@ -82,6 +82,8 @@ services:
       TTS_MODEL_CACHE: /app/models_cache/namaa_dahih_lora_hf
       TTS_OUTPUT_DIR: /app/outputs
       TTS_ARABIC_REFERENCE_WAV: /app/arabic_model/reference.wav
+      TTS_MIN_CHARS: 90
+      TTS_MAX_CHARS: 200
       HF_TOKEN: ${HF_TOKEN:-}
     volumes:
       - ./tts_service2/outputs:/app/outputs

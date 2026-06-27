@@ -58,6 +58,16 @@ def text_for_generation(text: str) -> str:
     )
 
 
+def transcript_text_from_record(record: dict | None) -> str | None:
+    if not record:
+        return None
+    return (
+        record.get("transcript_text")
+        or record.get("friendly_script")
+        or record.get("text")
+    )
+
+
 async def get_document_text_or_fail(document_id: str) -> str:
     document = await clients.get_document(document_id)
 
@@ -70,6 +80,45 @@ async def get_document_text_or_fail(document_id: str) -> str:
         raise InvalidPipelineStateError(f"Document '{document_id}' exists but has no full_text.")
 
     return full_text
+
+
+async def get_or_create_english_transcript_text(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+    force_regenerate: bool = False,
+) -> str:
+    if not force_regenerate:
+        cached_english = await clients.get_transcript(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language="en",
+        )
+
+        cached_text = transcript_text_from_record(cached_english)
+        if cached_text:
+            return cached_text
+
+    text = text_for_generation(await get_document_text_or_fail(document_id))
+    generated = await clients.generate_english_transcript(text)
+
+    transcript_text = (
+        generated.get("friendly_script")
+        or generated.get("text")
+        or str(generated)
+    )
+
+    stored_english = await clients.store_transcript(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language="en",
+        transcript_text=transcript_text,
+    )
+
+    return transcript_text_from_record(stored_english) or transcript_text
 
 
 async def add_text_document_pipeline(
@@ -438,25 +487,28 @@ async def transcript_pipeline(
     lesson_id: str,
     document_id: str,
     language: str,
+    force_regenerate: bool = False,
 ):
-    cached_transcript = await clients.get_transcript(
-        user_id=user_id,
-        lesson_id=lesson_id,
-        document_id=document_id,
-        language=language,
-    )
+    if not force_regenerate:
+        cached_transcript = await clients.get_transcript(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            language=language,
+        )
 
-    if cached_transcript:
-        return {
-            "source": "cache",
-            "transcript": cached_transcript,
-        }
+        if cached_transcript:
+            return {
+                "source": "cache",
+                "transcript": cached_transcript,
+            }
 
     stored_transcript = await generate_and_store_transcript(
         user_id=user_id,
         lesson_id=lesson_id,
         document_id=document_id,
         language=language,
+        force_regenerate=force_regenerate,
     )
 
     return {
@@ -471,11 +523,17 @@ async def generate_and_store_transcript(
     lesson_id: str,
     document_id: str,
     language: str,
+    force_regenerate: bool = False,
 ):
-    text = text_for_generation(await get_document_text_or_fail(document_id))
-
     if language == "ar":
-        generated = await clients.generate_arabic_transcript(text)
+        english_transcript = await get_or_create_english_transcript_text(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+            force_regenerate=force_regenerate,
+        )
+
+        generated = await clients.generate_arabic_transcript(english_transcript)
 
         transcript_text = (
             generated.get("arabic_tts")
@@ -485,6 +543,7 @@ async def generate_and_store_transcript(
         )
 
     else:
+        text = text_for_generation(await get_document_text_or_fail(document_id))
         generated = await clients.generate_english_transcript(text)
 
         transcript_text = (

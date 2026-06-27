@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 import generate_narration as base
 import generate_narration_namaa_dahih_lora as lora
 
@@ -178,7 +180,140 @@ def _prepare_english_events(text: str, args: argparse.Namespace) -> list[base.Ev
             events.append(base.Event(index=idx, kind="silence", duration_ms=int(part), source=f"[pause:{part}ms]"))
             idx += 1
         current_text = not current_text
-    return events
+    return base.merge_short_speech_events(events, args.min_chars, args.max_chars)
+
+
+def _to_mono_numpy(wav) -> np.ndarray:
+    if hasattr(wav, "detach"):
+        arr = wav.detach().cpu().float().numpy()
+    else:
+        arr = np.asarray(wav, dtype=np.float32)
+
+    arr = np.asarray(arr, dtype=np.float32)
+    arr = np.squeeze(arr)
+    if arr.ndim == 0:
+        arr = arr.reshape(1)
+    elif arr.ndim == 2:
+        if arr.shape[0] <= arr.shape[1]:
+            arr = arr.mean(axis=0)
+        else:
+            arr = arr.mean(axis=1)
+    elif arr.ndim > 2:
+        arr = arr.reshape(-1)
+    return np.clip(arr, -1.0, 1.0).astype(np.float32, copy=False)
+
+
+def _synthesize_waveform(engine, text: str, retry_index: int, language_id: str) -> tuple[np.ndarray, float]:
+    params = engine.variants(retry_index)
+    if language_id == "ar":
+        with base.capture_chatterbox_repetition() as repetition_logs:
+            wav = engine.model.generate(
+                text=text,
+                language_id=base.LANGUAGE_ID,
+                audio_prompt_path=str(engine.args.reference),
+                **params,
+            )
+        if repetition_logs:
+            raise base.GenerationError("; ".join(repetition_logs[-2:]))
+    else:
+        reference = getattr(engine.args, "english_reference", None)
+        audio_prompt_path = str(reference) if reference and Path(reference).exists() else None
+        wav = engine.model.generate(
+            text=text,
+            audio_prompt_path=audio_prompt_path,
+            **params,
+        )
+
+    audio = _to_mono_numpy(wav)
+    return audio, float(len(audio)) / float(engine.sample_rate)
+
+
+def _generate_speech_event_memory(
+    engine,
+    event: base.Event,
+    chunk_idx: int,
+    args: argparse.Namespace,
+    language_id: str,
+) -> tuple[list[base.ChunkResult], list[np.ndarray]]:
+    results: list[base.ChunkResult] = []
+    audio_parts: list[np.ndarray] = []
+    pieces = [event.text]
+    pass_no = 0
+
+    while pieces:
+        text = pieces.pop(0).strip()
+        if not text:
+            continue
+
+        last_error = ""
+        for attempt in range(args.retries):
+            try:
+                audio, duration = _synthesize_waveform(engine, text, attempt, language_id)
+                if duration < base.expected_min_duration(text):
+                    raise base.GenerationError(
+                        f"Generated audio too short: {duration:.2f}s for {len(text)} chars"
+                    )
+                results.append(
+                    base.ChunkResult(
+                        event_index=event.index,
+                        chunk_index=chunk_idx,
+                        kind="speech",
+                        text=event.source,
+                        cleaned_text=text,
+                        audio_path="",
+                        duration_sec=duration,
+                        status="ok",
+                        attempts=attempt + 1,
+                    )
+                )
+                audio_parts.append(audio)
+                return results, audio_parts
+            except Exception as exc:
+                last_error = repr(exc)
+                base.time.sleep(args.retry_sleep_sec)
+
+        if pass_no < args.split_retry_passes and len(text) > args.min_split_chars:
+            smaller = max(args.min_split_chars, len(text) // 2)
+            pieces = base.split_text_chunk(text, smaller) + pieces
+            pass_no += 1
+            continue
+
+        results.append(
+            base.ChunkResult(
+                event_index=event.index,
+                chunk_index=chunk_idx,
+                kind="speech",
+                text=event.source,
+                cleaned_text=text,
+                audio_path="",
+                duration_sec=0.0,
+                status="failed",
+                attempts=args.retries,
+                error=last_error,
+            )
+        )
+        return results, audio_parts
+    return results, audio_parts
+
+
+def _silence_audio(duration_ms: int, sample_rate: int) -> np.ndarray:
+    samples = max(1, int(sample_rate * duration_ms / 1000))
+    return np.zeros(samples, dtype=np.float32)
+
+
+def _write_final_audio(audio_parts: list[np.ndarray], final_path: Path, args: argparse.Namespace, sample_rate: int) -> None:
+    sf = base.require_package("soundfile", "pip install soundfile")
+    pieces = [base.apply_fade(part, sample_rate, args.fade_ms) for part in audio_parts if len(part)]
+    if not pieces:
+        raise RuntimeError("No successful audio chunks to stitch.")
+
+    final = np.concatenate(pieces).astype(np.float32)
+    if args.peak_normalize:
+        peak = float(np.max(np.abs(final))) if len(final) else 0.0
+        if peak > 0:
+            final = final * min(1.0, args.peak_target / peak)
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+    sf.write(str(final_path), final, sample_rate, subtype="PCM_16")
 
 
 class MultiModelTTSService:
@@ -240,18 +375,13 @@ class MultiModelTTSService:
         )
 
         results: list[base.ChunkResult] = []
+        audio_parts: list[np.ndarray] = []
         chunk_idx = 1
 
         with self._locks[language_id]:
             for event in events:
                 if event.kind == "silence":
-                    out_path = run_dir / "chunks" / f"chunk_{chunk_idx:04d}_silence.wav"
-                    base.write_silence(
-                        out_path,
-                        event.duration_ms,
-                        engine.sample_rate,
-                        request_args.fade_ms,
-                    )
+                    audio_parts.append(_silence_audio(event.duration_ms, engine.sample_rate))
                     results.append(
                         base.ChunkResult(
                             event_index=event.index,
@@ -259,22 +389,22 @@ class MultiModelTTSService:
                             kind="silence",
                             text=event.source,
                             cleaned_text="",
-                            audio_path=str(out_path),
+                            audio_path="",
                             duration_sec=event.duration_ms / 1000.0,
                             status="ok",
                             attempts=0,
                         )
                     )
                 else:
-                    results.extend(
-                        base.generate_speech_event(
-                            engine,
-                            event,
-                            chunk_idx,
-                            run_dir,
-                            request_args,
-                        )
+                    chunk_results, chunk_audio_parts = _generate_speech_event_memory(
+                        engine,
+                        event,
+                        chunk_idx,
+                        request_args,
+                        language_id,
                     )
+                    results.extend(chunk_results)
+                    audio_parts.extend(chunk_audio_parts)
                 chunk_idx += 1
 
             base.save_csv(results, run_dir / "chunks.csv")
@@ -285,7 +415,7 @@ class MultiModelTTSService:
             )
             expected_speech = any(event.kind == "speech" for event in events)
             successful_speech = any(
-                row.kind == "speech" and row.status == "ok" and row.audio_path
+                row.kind == "speech" and row.status == "ok"
                 for row in results
             )
             if expected_speech and not successful_speech:
@@ -297,7 +427,7 @@ class MultiModelTTSService:
                     f"First errors: {error_summary[:1000]}"
                 )
             final_path = run_dir / "final.wav"
-            base.stitch(results, final_path, request_args, engine.sample_rate)
+            _write_final_audio(audio_parts, final_path, request_args, engine.sample_rate)
 
         return final_path
 
@@ -353,8 +483,10 @@ def build_arabic_args() -> argparse.Namespace:
             os.environ.get("TTS_START_CHECKPOINT_REVISION", "main"),
             "--device",
             os.environ.get("TTS_DEVICE", ""),
+            "--min-chars",
+            os.environ.get("TTS_MIN_CHARS", "90"),
             "--max-chars",
-            os.environ.get("TTS_MAX_CHARS", "150"),
+            os.environ.get("TTS_MAX_CHARS", "200"),
             "--retries",
             os.environ.get("TTS_RETRIES", "4"),
             "--split-retry-passes",
@@ -398,8 +530,8 @@ def build_english_args() -> argparse.Namespace:
         transition_ms=int(os.environ.get("TTS_TRANSITION_MS", "400")),
         comma_pause_ms=int(os.environ.get("TTS_COMMA_PAUSE_MS", "120")),
         stop_pause_ms=int(os.environ.get("TTS_STOP_PAUSE_MS", "240")),
-        min_chars=int(os.environ.get("TTS_MIN_CHARS", "0")),
-        max_chars=int(os.environ.get("TTS_ENGLISH_MAX_CHARS", os.environ.get("TTS_MAX_CHARS", "150"))),
+        min_chars=int(os.environ.get("TTS_MIN_CHARS", "90")),
+        max_chars=int(os.environ.get("TTS_ENGLISH_MAX_CHARS", os.environ.get("TTS_MAX_CHARS", "200"))),
         keep_parentheses=False,
         keep_diacritics=False,
         keep_quotes=False,
@@ -457,6 +589,7 @@ def service_info(service: MultiModelTTSService | None) -> dict[str, Any]:
             "adapter_subfolder": service.arabic_args.adapter_subfolder,
             "start_checkpoint_repo": service.arabic_args.start_checkpoint_repo,
             "max_chars": service.arabic_args.max_chars,
+            "min_chars": service.arabic_args.min_chars,
             "retries": service.arabic_args.retries,
             "split_retry_passes": service.arabic_args.split_retry_passes,
             "min_split_chars": service.arabic_args.min_split_chars,
@@ -474,5 +607,7 @@ def service_info(service: MultiModelTTSService | None) -> dict[str, Any]:
             "model_dir": str(service.english_args.model_dir),
             "model_repo": "ResembleAI/chatterbox",
             "reference": str(service.english_args.english_reference) if service.english_args.english_reference else "built-in default voice",
+            "min_chars": service.english_args.min_chars,
+            "max_chars": service.english_args.max_chars,
         },
     }

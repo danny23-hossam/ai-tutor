@@ -9,12 +9,14 @@ from openai import OpenAI
 # ------------------------------- Settings  -------------------------------
 MODEL_NAME = "openai/gpt-oss-20b"
 
-MAX_INPUT_TOKENS = 3000
+MAX_INPUT_TOKENS = 900
 SAFETY_MARGIN_TOKENS = 256
 MAX_RETRIES = 4
+CHUNK_RESPONSE_MAX_TOKENS = 1600
+GROQ_TPM_WAIT_SECONDS = 65
 
 NUM_FEW_SHOT_EXAMPLES = 1
-EXAMPLE_EXCERPT_CHARS = 1800
+EXAMPLE_EXCERPT_CHARS = 900
 EXAMPLES_DIR = "scripts"
 
 API_KEY = dotenv.get_key(".env", "GROQ_API_KEY")
@@ -54,8 +56,19 @@ def estimate_tokens(text: str) -> int:
 def call_chat_with_backoff(client, model, messages, max_retries=MAX_RETRIES, base_wait=1.0):
     for attempt in range(max_retries):
         try:
-            return client.chat.completions.create(model=model, messages=messages)
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=CHUNK_RESPONSE_MAX_TOKENS,
+            )
         except Exception as e:
+            txt = str(e).lower()
+            if "tokens per minute" in txt or "rate_limit_exceeded" in txt:
+                if attempt == max_retries - 1:
+                    raise e
+                print(f"  Rate limit reached. Waiting {GROQ_TPM_WAIT_SECONDS}s before retry...")
+                time.sleep(GROQ_TPM_WAIT_SECONDS)
+                continue
             if attempt == max_retries - 1:
                 raise e
 
@@ -71,22 +84,47 @@ def chunk_text_by_token_limit(text: str, max_input_tokens: int) -> list[str]:
     chunks = []
     current = ""
 
+    def flush_current():
+        nonlocal current
+        if current:
+            chunks.append(current)
+            current = ""
+
+    def add_piece(piece: str):
+        nonlocal current
+        piece = piece.strip()
+        if not piece:
+            return
+
+        candidate = (current + "\n\n" + piece).strip() if current else piece
+        if estimate_tokens(candidate) <= max_tokens_per_chunk:
+            current = candidate
+            return
+
+        flush_current()
+
+        if estimate_tokens(piece) <= max_tokens_per_chunk:
+            current = piece
+            return
+
+        approx_chars = max_tokens_per_chunk * 4
+        for i in range(0, len(piece), approx_chars):
+            part = piece[i:i + approx_chars].strip()
+            if part:
+                chunks.append(part)
+
     for p in paragraphs:
         p = p.strip()
         if not p:
             continue
 
-        candidate = (current + "\n\n" + p).strip() if current else p
-
-        if estimate_tokens(candidate) <= max_tokens_per_chunk:
-            current = candidate
+        if estimate_tokens(p) > max_tokens_per_chunk:
+            for sentence in re.split(r"(?<=[.!?؟!])\s+", p):
+                add_piece(sentence)
         else:
-            if current:
-                chunks.append(current)
-            current = p
+            add_piece(p)
 
-    if current:
-        chunks.append(current)
+    flush_current()
 
     return chunks
 
@@ -148,6 +186,44 @@ def clean_for_xtts_script(text: str) -> str:
         return ""
 
     text = text.strip()
+
+    # Flatten escaped and real line breaks before the text reaches Chatterbox.
+    text = text.replace("\\n", " ")
+    text = text.replace("\\r", " ")
+    text = text.replace("\r", " ")
+    text = text.replace("\n", " ")
+    text = text.replace("\t", " ")
+    text = text.replace("\u00a0", " ")
+    text = text.replace("\u200b", "")
+    text = text.replace("\u200c", "")
+    text = text.replace("\u200d", "")
+
+    unicode_replacements = {
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2010": "-",
+        "\u2011": "-",
+        "\u2012": "-",
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2212": " ناقص ",
+        "\u00d7": " ضرب ",
+        "â€™": "'",
+        "â€˜": "'",
+        "â€œ": '"',
+        "â€": '"',
+        "â€“": "-",
+        "â€”": "-",
+        "â€‘": "-",
+        "â€¯": " ",
+        "Â ": " ",
+        "Â": "",
+    }
+    for old, new in unicode_replacements.items():
+        text = text.replace(old, new)
+    text = re.sub(r"\u00e2\u20ac.", " ", text)
 
     # Normalize pause markers
     text = re.sub(r"\[pause\]", " [pause] ", text, flags=re.IGNORECASE)
@@ -362,7 +438,7 @@ def step1_translate(english_script: str) -> str:
     Returns the raw Arabic translation as a single string.
     """
 
-    chunks = chunk_text_by_token_limit(english_script, 1500)
+    chunks = chunk_text_by_token_limit(english_script, MAX_INPUT_TOKENS)
     num_chunks = len(chunks)
     translated_parts = []
 
@@ -399,10 +475,10 @@ def step1_translate(english_script: str) -> str:
 #  STEP 2 — Style Transfer: Raw Arabic → Toned Egyptian Arabic
 # ================================================================
 
-XTTS_RULES = """
-XTTS OUTPUT RULES:
+CHATTERBOX_RULES = """
+CHATTERBOX OUTPUT RULES:
 - Return only plain speakable narration text.
-- The output must be suitable to send directly to the XTTS /tts endpoint as the "text" field.
+- The output must be suitable to send directly to the Chatterbox /tts endpoint as the "text" field.
 - Do not output JSON.
 - Do not output SSML.
 - Do not output <speak>, <break>, HTML, XML, or Markdown.
@@ -429,76 +505,167 @@ XTTS OUTPUT RULES:
 - Keep the warm direct-address energy, for example "عزيزي".
 """
 
-STYLE_PROMPT_FIRST = """
-You are a professional Egyptian Arabic script editor for educational TTS audio.
+# Backward-compatible name used by the prompt strings below.
+XTTS_RULES = CHATTERBOX_RULES
 
-You will receive a raw Arabic translation. Your job is to rewrite it in the exact
-tone, personality, and style shown in the examples below.
+ARABIC_FIXED_OPENING = "أعزائي المشاهدين، السلام عليكم ورحمة الله وبركاته. أهلا بكم في شرح جديد من Papyrus."
+ARABIC_FIXED_CLOSING = "شكرا جدا على حسن استماعكم، ونشوفكم إن شاء الله في شرح جديد من Papyrus."
+
+STYLE_PROMPT_SINGLE = """
+You are a professional Egyptian Arabic lecturer and script editor for educational TTS audio.
+
+Task:
+Rewrite the raw Arabic input into one complete Egyptian Arabic narration suitable for Chatterbox TTS.
+
+The transcript must feel like one full lecture-style explanation with:
+1. A fixed opening.
+2. A short introduction.
+3. A clear middle explanation.
+4. A short conclusion.
+5. A fixed closing.
+
+Fixed opening:
+"{opening}"
+
+Fixed closing:
+"{closing}"
 
 RULES:
-- Keep the important educational information.
+- Return only plain speakable narration text.
+- Start exactly with the fixed opening.
+- End exactly with the fixed closing.
+- Do not add anything before the opening or after the closing.
+- Do not output JSON, markdown, headings, tables, bullets, SSML, XML, or HTML.
+- Do not output line breaks, escaped newline text like \\n, or paragraph separators. Return one continuous text string.
+- Do not output LaTeX delimiters such as \\( \\), \\[ \\], dollar signs, braces, underscores, or superscript/subscript symbols.
+- Spell mathematical variables and formulas in plain spoken words.
+- Avoid unusual Unicode symbols, non-breaking hyphens, and decorative punctuation.
+- Rewrite into natural Egyptian Arabic, like a lecturer explaining to students.
+- Keep important technical terms in English when commonly spoken in English.
+- Do not add fake facts.
+- Remove academic formatting, citations, references, emails, and footnotes.
+- Convert equations into simple spoken explanations.
+- Use short natural sentences.
+- Use [pause] after important ideas.
+- Use [transition] when moving to a new major idea.
+- The introduction should be brief and prepare the listener for the topic.
+- The middle should explain step by step with clear flow, but without padding.
+- Keep the audio complete but focused: target about 5-7 minutes for a normal document.
+- Preserve everything lecture-relevant needed to understand the topic, including core definitions, mechanisms, comparisons, equations, examples, applications, and conclusions.
+- Describe the core points clearly and include useful illustrative details that help the listener understand why each idea matters.
+- Use short examples or analogies for difficult or central ideas, but avoid long stories.
+- Remove repetition, filler, long setup, and side details that do not support the lecture's main understanding.
+- Develop the ideas enough to feel like a real lecture while keeping the same style and structure.
+- The conclusion should summarize the core idea warmly and briefly.
+- Match the narration energy and conversational clarity in the examples.
+
+""" + CHATTERBOX_RULES + """
+
+STYLE EXAMPLES — rewrite to match this voice and pacing:
+{few_shot_block}
+"""
+
+STYLE_PROMPT_FIRST = """
+You are a professional Egyptian Arabic lecturer and script editor for educational TTS audio.
+
+You will receive a raw Arabic translation. Rewrite it as the first part of one continuous Egyptian Arabic lecture for Chatterbox TTS.
+
+Fixed opening:
+"{opening}"
+
+RULES:
+- Return only plain speakable narration text.
+- Do not output line breaks, escaped newline text like \\n, or paragraph separators. Return one continuous text string.
+- Do not output LaTeX delimiters such as \\( \\), \\[ \\], dollar signs, braces, underscores, or superscript/subscript symbols.
+- Spell mathematical variables and formulas in plain spoken words.
+- Avoid unusual Unicode symbols, non-breaking hyphens, and decorative punctuation.
+- Start exactly with the fixed opening.
+- After the opening, add a short introduction that prepares the listener for the topic.
+- Do not add a conclusion, closing summary, or farewell in this part.
+- Keep all important educational information.
+- Include every lecture-relevant point from this part, with enough explanation to preserve the full meaning.
+- Add a brief example, analogy, or application when it clarifies a core idea.
+- Remove repetition, filler, and side details that do not support the lecture's main understanding.
 - Do not add fake facts.
 - Remove unnecessary academic formatting.
 - Rewrite into natural spoken Egyptian colloquial Arabic.
 - If the input contains steps, tables, bullets, headings, or markdown, completely rewrite them into smooth narration.
 - Do not preserve the structure of the input if it sounds like notes, a report, or an outline.
-- Match the narration order from the examples: context → explanation → analogy → light joke if it matches the topic → continue.
+- Match the examples' voice and clarity, but keep the pacing concise.
 - Preserve [pause] and [transition] tokens.
-- The script must open with: "أعزائي المشاهدين السلام عليكم ورحمة الله وبركاته أهلا بكم في شرح جديد من papyrus"
-- Remove any closing summary if it exists.
 
-""" + XTTS_RULES + """
+""" + CHATTERBOX_RULES + """
 
-STYLE EXAMPLES — rewrite to match this exact voice:
+STYLE EXAMPLES — rewrite to match this voice and pacing:
 {few_shot_block}
 """
 
 STYLE_PROMPT_MID = """
-You are a professional Egyptian Arabic script editor for educational TTS audio.
+You are a professional Egyptian Arabic lecturer and script editor for educational TTS audio.
 
-Rewrite the raw Arabic translation below in the tone and style shown in the examples.
+Rewrite the raw Arabic translation below as the middle of the same continuous Egyptian Arabic lecture.
 
 RULES:
-- Do NOT add a greeting or intro — go straight into content.
-- Keep the important educational information.
+- Return only plain speakable narration text.
+- Do not output line breaks, escaped newline text like \\n, or paragraph separators. Return one continuous text string.
+- Do not output LaTeX delimiters such as \\( \\), \\[ \\], dollar signs, braces, underscores, or superscript/subscript symbols.
+- Spell mathematical variables and formulas in plain spoken words.
+- Avoid unusual Unicode symbols, non-breaking hyphens, and decorative punctuation.
+- Do not add a greeting, intro, title, conclusion, closing summary, or farewell.
+- Continue directly from the previous idea with natural flow.
+- Keep all important educational information.
+- Include every lecture-relevant point from this part, with enough explanation to preserve the full meaning.
+- Add a brief example, analogy, or application when it clarifies a core idea.
+- Do not expand into filler or side discussion beyond the lecture's main understanding.
 - Do not add fake facts.
 - Remove unnecessary academic formatting.
 - Rewrite into natural spoken Egyptian colloquial Arabic.
 - If the input contains steps, tables, bullets, headings, or markdown, completely rewrite them into smooth narration.
 - Do not preserve the structure of the input if it sounds like notes, a report, or an outline.
-- Match the narration order from the examples: context → explanation → analogy → light joke if it matches the topic → continue.
+- Match the examples' voice and clarity, but keep the pacing concise.
 - Preserve [pause] and [transition] tokens.
-- Remove any closing summary if it exists.
 
-""" + XTTS_RULES + """
+""" + CHATTERBOX_RULES + """
 
 STYLE EXAMPLES:
 {few_shot_block}
 """
 
 STYLE_PROMPT_LAST = """
-You are a professional Egyptian Arabic script editor for educational TTS audio.
+You are a professional Egyptian Arabic lecturer and script editor for educational TTS audio.
 
-Rewrite the final section of the raw Arabic translation in the tone shown in the examples.
+Rewrite the final section of the raw Arabic translation as the ending of the same continuous Egyptian Arabic lecture.
+
+Fixed closing:
+"{closing}"
 
 RULES:
-- Do NOT add a greeting or intro.
-- Keep the important educational information.
+- Return only plain speakable narration text.
+- Do not output line breaks, escaped newline text like \\n, or paragraph separators. Return one continuous text string.
+- Do not output LaTeX delimiters such as \\( \\), \\[ \\], dollar signs, braces, underscores, or superscript/subscript symbols.
+- Spell mathematical variables and formulas in plain spoken words.
+- Avoid unusual Unicode symbols, non-breaking hyphens, and decorative punctuation.
+- Do not add a greeting, intro, or title.
+- Continue directly from the previous idea.
+- Keep all important educational information.
+- Finish the remaining explanation fully before the conclusion.
+- Include useful illustrative detail when it clarifies a final core idea.
+- Remove repetition, filler, and side details while preserving all needed final points.
 - Do not add fake facts.
 - Remove unnecessary academic formatting.
 - Rewrite into natural spoken Egyptian colloquial Arabic.
 - If the input contains steps, tables, bullets, headings, or markdown, completely rewrite them into smooth narration.
 - Do not preserve the structure of the input if it sounds like notes, a report, or an outline.
-- Match the narration order from the examples: context → explanation → analogy → light joke if it matches the topic → continue.
 - Preserve [pause] and [transition] tokens.
-- End with a 2–4 sentence colloquial closing summary, then thank listeners warmly in the same voice.
+- Add a clear 1-3 sentence colloquial conclusion that summarizes the core idea.
+- The final sentence must be exactly the fixed closing.
+- Do not add anything after the fixed closing.
 
-""" + XTTS_RULES + """
+""" + CHATTERBOX_RULES + """
 
 STYLE EXAMPLES:
 {few_shot_block}
 """
-
 
 STYLE_CONTINUITY_FIRST = """
 CONTINUITY RULES:
@@ -535,7 +702,7 @@ def step2_apply_style(raw_arabic: str) -> str:
     Returns the final styled Egyptian Arabic script.
     """
 
-    chunks = chunk_text_by_token_limit(raw_arabic, 700)
+    chunks = chunk_text_by_token_limit(raw_arabic, 550)
     num_chunks = len(chunks)
     styled_parts = []
 
@@ -551,11 +718,23 @@ def step2_apply_style(raw_arabic: str) -> str:
             seed_text=chunk
         )
 
-        if num_chunks == 1 or idx == 1:
-            system_prompt = STYLE_PROMPT_FIRST.format(few_shot_block=few_shot_block)
+        if num_chunks == 1:
+            system_prompt = STYLE_PROMPT_SINGLE.format(
+                opening=ARABIC_FIXED_OPENING,
+                closing=ARABIC_FIXED_CLOSING,
+                few_shot_block=few_shot_block,
+            )
+        elif idx == 1:
+            system_prompt = STYLE_PROMPT_FIRST.format(
+                opening=ARABIC_FIXED_OPENING,
+                few_shot_block=few_shot_block,
+            )
             system_prompt += STYLE_CONTINUITY_FIRST
         elif idx == num_chunks:
-            system_prompt = STYLE_PROMPT_LAST.format(few_shot_block=few_shot_block)
+            system_prompt = STYLE_PROMPT_LAST.format(
+                closing=ARABIC_FIXED_CLOSING,
+                few_shot_block=few_shot_block,
+            )
             system_prompt += STYLE_CONTINUITY_LAST
         else:
             system_prompt = STYLE_PROMPT_MID.format(few_shot_block=few_shot_block)
@@ -572,7 +751,7 @@ def step2_apply_style(raw_arabic: str) -> str:
     final_script = "\n\n".join(styled_parts)
     final_script = clean_for_xtts_script(final_script)
     
-    print("  ✅ Step 2 done — XTTS-friendly final script ready.")
+    print("  ✅ Step 2 done — Chatterbox-friendly final script ready.")
     return final_script
 
 

@@ -225,6 +225,7 @@ async def get_transcript(req: TranscriptRequest):
             lesson_id=req.lesson_id,
             document_id=req.document_id,
             language=req.language,
+            force_regenerate=req.force_regenerate,
         )
 
     except PipelineError as e:
