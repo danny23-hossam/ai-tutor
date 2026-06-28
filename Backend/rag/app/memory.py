@@ -22,6 +22,10 @@ class ConversationMemory:
         with self._lock:
             return list(self._data.get(key, []))
 
+    def get_recent(self, user_id: str, lesson_id: str, document_id: str) -> list[dict]:
+        turns = self.get(user_id, lesson_id, document_id)
+        return turns[-settings.memory_max_turns :]
+
     def append_turns(
         self,
         user_id: str,
@@ -39,7 +43,6 @@ class ConversationMemory:
                     {"role": "assistant", "content": answer},
                 ]
             )
-            self._data[key] = turns[-settings.memory_max_turns :]
             self._save()
             return list(self._data[key])
 

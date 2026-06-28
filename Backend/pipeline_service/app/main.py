@@ -26,6 +26,7 @@ from app.pipeline import (
     flashcards_pipeline,
     transcript_pipeline,
     ask_pipeline,
+    chat_history_pipeline,
     audio_pipeline,
     audio_url_status_pipeline,
     ensure_audio_generated_pipeline,
@@ -297,6 +298,23 @@ async def ask_document(req: AskRequest):
             lesson_id=req.lesson_id,
             document_id=req.document_id,
             question=req.question,
+        )
+
+    except PipelineError as e:
+        raise_pipeline_error(e)
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/pipeline/chat/history")
+async def get_chat_history(user_id: str, document_id: str, lesson_id: str = "default"):
+    try:
+        return await chat_history_pipeline(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
         )
 
     except PipelineError as e:

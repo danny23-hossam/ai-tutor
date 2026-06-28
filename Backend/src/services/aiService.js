@@ -221,6 +221,31 @@ async function callPipelineAsk(userId, documentId, lessonId, question) {
 }
 
 /**
+ * Retrieve retained RAG chat history for a document.
+ *
+ * @param {string} userId
+ * @param {string} documentId
+ * @param {string} lessonId
+ * @returns {Promise<Array|null>} Messages as [{ role, content }, ...] or null
+ */
+async function callPipelineChatHistory(userId, documentId, lessonId) {
+    try {
+        const res = await ai.get('/pipeline/chat/history', {
+            params: {
+                user_id: String(userId),
+                document_id: String(documentId),
+                lesson_id: String(lessonId),
+            },
+        });
+
+        return Array.isArray(res.data?.messages) ? res.data.messages : [];
+    } catch (err) {
+        console.error('[aiService] Pipeline chat history failed:', err.message);
+        return null;
+    }
+}
+
+/**
  * Generate (or retrieve cached) transcript for a document.
  *
  * @param {string} userId
@@ -330,6 +355,7 @@ module.exports = {
     callPipelineFlashcards,
     callPipelineQuestions,
     callPipelineAsk,
+    callPipelineChatHistory,
     callPipelineTranscript,
     callPipelineAudioPrepare,
     callPipelineAudio,

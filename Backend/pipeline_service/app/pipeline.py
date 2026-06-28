@@ -607,6 +607,29 @@ async def ask_pipeline(
     )
 
 
+async def chat_history_pipeline(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+):
+    memory = await clients.get_rag_memory(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+    )
+    messages = memory.get("memory", []) if isinstance(memory, dict) else []
+
+    return {
+        "user_id": user_id,
+        "lesson_id": lesson_id,
+        "document_id": document_id,
+        "memory_key": memory.get("memory_key") if isinstance(memory, dict) else None,
+        "messages": messages,
+        "count": len(messages),
+    }
+
+
 async def audio_pipeline(
     *,
     user_id: str,

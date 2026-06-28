@@ -497,6 +497,52 @@ Response:
 
 The RAG service retrieves up to 10 chunks internally. If no chunks are found, the answer will say that no document chunks were available, then provide a general explanation.
 
+### GET `/pipeline/chat/history`
+
+Returns stored RAG chat memory for a user, lesson, and document. New chats retain full history for display; the RAG prompt still uses only the recent configured memory window.
+
+Request query parameters:
+
+```text
+user_id      string, required
+document_id  string, required
+lesson_id    string, optional, default "default"
+```
+
+Example:
+
+```text
+http://localhost:8005/pipeline/chat/history?user_id=omar&lesson_id=1&document_id=1
+```
+
+Response:
+
+```json
+{
+  "user_id": "omar",
+  "lesson_id": "1",
+  "document_id": "1",
+  "memory_key": "omar::1::1",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is this document about?"
+    },
+    {
+      "role": "assistant",
+      "content": "..."
+    }
+  ],
+  "count": 2
+}
+```
+
+The public Node API exposes the same retained history for the logged-in user at:
+
+```text
+GET /api/ai-generations/chat/history/:lessonId
+```
+
 ## Useful Internal Debug Endpoints
 
 These are not the main frontend API, but they are useful for checking stored data.

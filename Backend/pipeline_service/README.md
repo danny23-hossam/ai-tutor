@@ -16,6 +16,7 @@ This service orchestrates all AI Tutor flows. The frontend should call this serv
 - `/pipeline/transcript`: Generate or fetch a TTS transcript.
 - `/pipeline/audio`: Generate audio from a stored transcript.
 - `/pipeline/ask`: Ask the RAG service with user/lesson/document memory.
+- `/pipeline/chat/history`: Retrieve retained RAG chat memory for a user/lesson/document.
 - `/health`: Check connected services.
 
 ## Connected Services

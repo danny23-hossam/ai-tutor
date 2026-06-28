@@ -11,6 +11,7 @@ const {
     triggerAiGeneration,
     getAiGenerationStatus,
     chatWithAi,
+    getChatHistory,
     generateAudio,
 } = require('../controllers/aiGenerationController');
 const { protect } = require('../middleware/authMiddleware');
@@ -28,6 +29,10 @@ router.post('/trigger', triggerAiGeneration);
 // POST /api/ai-generations/chat
 // RAG-based AI Tutor chat — answers questions grounded in lesson documents.
 router.post('/chat', chatWithAi);
+
+// GET /api/ai-generations/chat/history/:lessonId
+// Returns retained RAG chat messages for the lesson.
+router.get('/chat/history/:lessonId', getChatHistory);
 
 // POST /api/ai-generations/audio
 // Generates TTS audio from lesson content via the pipeline, stores WAV to Drive.

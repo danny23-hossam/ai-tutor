@@ -579,6 +579,23 @@ async def ask_rag(
     )
 
 
+async def get_rag_memory(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+):
+    return await request_json(
+        "GET",
+        f"{settings.rag_service_url}/rag/memory",
+        params={
+            "user_id": user_id,
+            "lesson_id": lesson_id,
+            "document_id": document_id,
+        },
+    )
+
+
 # =========================================================
 # Text Generation Service
 # =========================================================

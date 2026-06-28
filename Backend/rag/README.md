@@ -32,7 +32,7 @@ This service does not load an embedding model or LLM directly. It calls:
 
 ## Storage
 
-Conversation memory is stored in JSON under `/data`, mounted by the `rag_data` Docker volume.
+Conversation memory is stored in JSON under `/data`, mounted by the `rag_data` Docker volume. Full stored history is retained for display, while only the recent `MEMORY_MAX_TURNS` messages are sent back into the model prompt.
 
 ## Swagger
 

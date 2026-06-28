@@ -457,6 +457,75 @@ const chatWithAi = async (req, res) => {
 // pre-signed S3 URL that the browser can stream directly — no Google Drive
 // upload or proxy streaming needed.
 
+// GET /api/ai-generations/chat/history/:lessonId
+//
+// Returns retained RAG chat memory for the lesson's current source document so
+// the frontend can hydrate the chat panel when the user reopens it.
+const getChatHistory = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { lessonId } = req.params;
+
+        // Verify lesson belongs to this user
+        const lessonCheck = await db.query(
+            'SELECT id FROM lessons WHERE id = $1 AND user_id = $2',
+            [lessonId, userId]
+        );
+        if (lessonCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Lesson not found' });
+        }
+
+        // Match POST /chat: history is keyed by the most recent uploaded file.
+        const filesResult = await db.query(
+            `SELECT id FROM lesson_files
+             WHERE lesson_id = $1 AND user_id = $2 AND type = 'upload'
+             ORDER BY created_at DESC LIMIT 1`,
+            [lessonId, userId]
+        );
+
+        if (filesResult.rows.length === 0) {
+            return res.status(404).json({
+                message: 'No uploaded files found for this lesson. Upload at least one PDF to enable AI chat.'
+            });
+        }
+
+        const documentId = String(filesResult.rows[0].id);
+
+        const aiReady = await aiService.isAvailable();
+        if (!aiReady) {
+            return res.status(503).json({
+                message: 'AI service is not available right now. Please try again later.',
+            });
+        }
+
+        const messages = await aiService.callPipelineChatHistory(
+            String(userId),
+            documentId,
+            String(lessonId)
+        );
+
+        if (!messages) {
+            return res.status(502).json({
+                message: 'Could not retrieve chat history from AI service.',
+            });
+        }
+
+        res.status(200).json({
+            lesson_id: String(lessonId),
+            document_id: documentId,
+            messages,
+            count: messages.length,
+        });
+
+    } catch (error) {
+        console.error('Error in getChatHistory:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+// POST /api/ai-generations/audio
+//
+// Generates a TTS audio lesson from the most recently uploaded file.
 const generateAudio = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -570,5 +639,6 @@ module.exports = {
     triggerAiGeneration,
     getAiGenerationStatus,
     chatWithAi,
+    getChatHistory,
     generateAudio,
 };

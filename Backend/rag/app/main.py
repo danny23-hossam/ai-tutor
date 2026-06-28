@@ -35,7 +35,7 @@ async def ask(req: AskRequest):
             top_k=10,
         )
         chunks = retrieved.get("results", []) if retrieved else []
-        memory_turns = memory.get(req.user_id, req.lesson_id, req.document_id)
+        memory_turns = memory.get_recent(req.user_id, req.lesson_id, req.document_id)
 
         generated = await clients.generate_answer(
             question=req.question,
