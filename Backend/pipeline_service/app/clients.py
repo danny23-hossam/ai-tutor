@@ -687,3 +687,100 @@ async def generate_audio(transcript_text: str, language: str):
     return response.content
 
 
+# =========================================================
+# Video Generation Service
+# =========================================================
+
+async def create_video_slides_from_text_services(
+    *,
+    topic_title: str,
+    mode: str,
+    max_slides: int,
+    summary_text: str,
+    english_transcript: str,
+    arabic_transcript: str,
+):
+    return await request_json(
+        "POST",
+        f"{settings.video_service_url}/slides/from-text-services",
+        json_payload={
+            "topic_title": topic_title,
+            "mode": mode,
+            "max_slides": max_slides,
+            "llm_endpoint": settings.video_slides_llm_endpoint,
+            "payload": {
+                "api_explain_response": {
+                    "explanation": summary_text,
+                },
+                "api_tts_script_response": {
+                    "friendly_script": english_transcript,
+                },
+                "api_translate_to_arabic_tts_response": {
+                    "arabic_script": arabic_transcript,
+                },
+            },
+        },
+    )
+
+
+async def generate_video(
+    *,
+    slides: list[dict],
+    output_name: str,
+    quality: str,
+    transition: str,
+    no_cache: bool,
+    tts_backend: str,
+    tts_generation_preset: str,
+    tts_max_chars: int,
+    tts_min_chars: int,
+    upload: dict,
+):
+    payload = {
+            "slides": slides,
+            "output_name": output_name,
+            "quality": quality,
+            "transition": transition,
+            "no_cache": no_cache,
+            "tts_backend": tts_backend,
+            "tts_generation_preset": tts_generation_preset,
+            "tts_max_chars": tts_max_chars,
+            "tts_min_chars": tts_min_chars,
+            "upload": upload,
+    }
+
+    async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
+        response = await client.post(
+            f"{settings.video_service_url}/video",
+            json=payload,
+        )
+
+    if response.status_code == 524:
+        return {
+            "status": "upstream_timeout",
+            "bucket": upload.get("bucket"),
+            "s3_key": upload.get("key"),
+            "content_type": upload.get("content_type") or "video/mp4",
+            "message": "Video request timed out through Cloudflare; polling S3 for the expected object.",
+        }
+
+    if response.status_code not in {200, 201, 202}:
+        raise ServiceError(
+            f"Video generation failed: status={response.status_code} body={response.text[:500]}"
+        )
+
+    if not response.content:
+        return {
+            "status": "accepted",
+            "bucket": upload.get("bucket"),
+            "s3_key": upload.get("key"),
+            "content_type": upload.get("content_type") or "video/mp4",
+        }
+
+    content_type = response.headers.get("content-type", "")
+    if "application/json" not in content_type:
+        raise ServiceError(
+            f"Video generation returned non-JSON response: content-type={content_type}"
+        )
+
+    return response.json()

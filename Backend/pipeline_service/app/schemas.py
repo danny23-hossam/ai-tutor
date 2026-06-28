@@ -45,3 +45,7 @@ class AudioRequest(BasePipelineRequest):
     language: Literal["en", "ar"] = "ar"
     # en = English audio
     # ar = Arabic audio
+
+
+class VideoRequest(BasePipelineRequest):
+    pass

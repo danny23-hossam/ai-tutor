@@ -14,6 +14,7 @@ from app.schemas import (
     TranscriptRequest,
     AskRequest,
     AudioRequest,
+    VideoRequest,
 )
 
 from app.pipeline import (
@@ -28,6 +29,8 @@ from app.pipeline import (
     audio_pipeline,
     audio_url_status_pipeline,
     ensure_audio_generated_pipeline,
+    video_url_status_pipeline,
+    ensure_video_generated_pipeline,
 )
 
 
@@ -86,6 +89,9 @@ app = FastAPI(
 audio_generation_tasks: dict[str, asyncio.Task] = {}
 audio_generation_errors: dict[str, str] = {}
 audio_generation_lock = asyncio.Lock()
+video_generation_tasks: dict[str, asyncio.Task] = {}
+video_generation_errors: dict[str, str] = {}
+video_generation_lock = asyncio.Lock()
 
 
 def audio_task_key(req: AudioRequest) -> str:
@@ -94,6 +100,22 @@ def audio_task_key(req: AudioRequest) -> str:
         lesson_id=req.lesson_id,
         document_id=req.document_id,
         language=req.language,
+    )
+
+
+def video_task_key(req: VideoRequest) -> str:
+    return audio_storage.build_video_key(
+        user_id=req.user_id,
+        lesson_id=req.lesson_id,
+        document_id=req.document_id,
+        mode="medium",
+        max_slides=15,
+        quality="medium_quality",
+        transition="fade",
+        tts_backend="ali_chatterbox_dahih_lora",
+        tts_generation_preset="conservative",
+        tts_max_chars=320,
+        tts_min_chars=100,
     )
 
 
@@ -115,6 +137,23 @@ async def run_audio_generation(req: AudioRequest, task_key: str):
             audio_generation_tasks.pop(task_key, None)
 
 
+async def run_video_generation(req: VideoRequest, task_key: str):
+    try:
+        video_generation_errors.pop(task_key, None)
+        await ensure_video_generated_pipeline(
+            user_id=req.user_id,
+            lesson_id=req.lesson_id,
+            document_id=req.document_id,
+        )
+    except Exception as exc:
+        traceback.print_exc()
+        video_generation_errors[task_key] = str(exc)
+    finally:
+        current_task = asyncio.current_task()
+        if video_generation_tasks.get(task_key) is current_task:
+            video_generation_tasks.pop(task_key, None)
+
+
 async def ensure_audio_generation_started(req: AudioRequest, task_key: str):
     async with audio_generation_lock:
         existing_task = audio_generation_tasks.get(task_key)
@@ -124,6 +163,19 @@ async def ensure_audio_generation_started(req: AudioRequest, task_key: str):
 
         audio_generation_tasks[task_key] = asyncio.create_task(
             run_audio_generation(req, task_key)
+        )
+        return True
+
+
+async def ensure_video_generation_started(req: VideoRequest, task_key: str):
+    async with video_generation_lock:
+        existing_task = video_generation_tasks.get(task_key)
+
+        if existing_task and not existing_task.done():
+            return False
+
+        video_generation_tasks[task_key] = asyncio.create_task(
+            run_video_generation(req, task_key)
         )
         return True
 
@@ -138,6 +190,7 @@ async def health():
             "rag_service": await clients.check_health(settings.rag_service_url),
             "tts_service": await clients.check_health(settings.tts_service_url),
             "document_service": await clients.check_health(settings.document_service_url),
+            "video_service": await clients.check_health(settings.video_service_url),
         },
     }
 
@@ -354,6 +407,46 @@ async def prepare_audio(req: AudioRequest):
                 "Audio generation started. Poll this endpoint again until status is ready."
                 if started
                 else "Audio generation is already running. Poll this endpoint again until status is ready."
+            ),
+        }
+
+    except PipelineError as e:
+        raise_pipeline_error(e)
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/pipeline/video/prepare")
+async def prepare_video(req: VideoRequest):
+    try:
+        result = await video_url_status_pipeline(
+            user_id=req.user_id,
+            lesson_id=req.lesson_id,
+            document_id=req.document_id,
+        )
+
+        task_key = result["s3_key"]
+
+        if result["status"] == "ready":
+            video_generation_errors.pop(task_key, None)
+            return result
+
+        if task_key in video_generation_errors:
+            # Previous attempt failed or timed out. Clear the error and start a new request
+            # if the S3 object is still missing.
+            video_generation_errors.pop(task_key, None)
+
+        started = await ensure_video_generation_started(req, task_key)
+
+        return {
+            **result,
+            "started": started,
+            "message": (
+                "Video generation started. Poll this endpoint again until status is ready."
+                if started
+                else "Video generation is already running. Poll this endpoint again until status is ready."
             ),
         }
 

@@ -35,6 +35,25 @@ class AudioUrlUnavailableError(PipelineError):
         )
 
 
+class VideoUrlUnavailableError(PipelineError):
+    def __init__(self):
+        super().__init__(
+            "Video URL playback requires S3 video storage to be configured.",
+            status_code=409,
+        )
+
+
+VIDEO_MODE = "medium"
+VIDEO_MAX_SLIDES = 15
+VIDEO_QUALITY = "medium_quality"
+VIDEO_TRANSITION = "fade"
+VIDEO_NO_CACHE = False
+VIDEO_TTS_BACKEND = "ali_chatterbox_dahih_lora"
+VIDEO_TTS_GENERATION_PRESET = "conservative"
+VIDEO_TTS_MAX_CHARS = 320
+VIDEO_TTS_MIN_CHARS = 100
+
+
 def public_document(document: dict) -> dict:
     visible_document = dict(document)
     full_text = visible_document.pop("full_text", "")
@@ -64,6 +83,16 @@ def transcript_text_from_record(record: dict | None) -> str | None:
     return (
         record.get("transcript_text")
         or record.get("friendly_script")
+        or record.get("text")
+    )
+
+
+def summary_text_from_record(record: dict | None) -> str | None:
+    if not record:
+        return None
+    return (
+        record.get("summary_text")
+        or record.get("summary")
         or record.get("text")
     )
 
@@ -914,6 +943,265 @@ async def ensure_audio_generated_pipeline(
         "source": "generated",
         "s3_key": s3_key,
         "size_bytes": stored_audio["size_bytes"],
+    }
+
+
+def build_video_s3_key(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+) -> str:
+    return audio_storage.build_video_key(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        mode=VIDEO_MODE,
+        max_slides=VIDEO_MAX_SLIDES,
+        quality=VIDEO_QUALITY,
+        transition=VIDEO_TRANSITION,
+        tts_backend=VIDEO_TTS_BACKEND,
+        tts_generation_preset=VIDEO_TTS_GENERATION_PRESET,
+        tts_max_chars=VIDEO_TTS_MAX_CHARS,
+        tts_min_chars=VIDEO_TTS_MIN_CHARS,
+    )
+
+
+async def get_or_create_summary_text(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+) -> str:
+    cached_summary = await clients.get_summary(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        summary_type="concise",
+        language="en",
+    )
+
+    cached_text = summary_text_from_record(cached_summary)
+    if cached_text:
+        return cached_text
+
+    summary_result = await summary_pipeline(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        summary_type="concise",
+        language="en",
+    )
+    summary_text = summary_text_from_record(summary_result.get("summary"))
+
+    if not summary_text:
+        raise InvalidPipelineStateError("Summary generation returned no summary_text.")
+
+    return summary_text
+
+
+async def get_or_create_arabic_transcript_text(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+) -> str:
+    cached_arabic = await clients.get_transcript(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language="ar",
+    )
+
+    cached_text = transcript_text_from_record(cached_arabic)
+    if cached_text:
+        return cached_text
+
+    stored_arabic = await generate_and_store_transcript(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+        language="ar",
+    )
+    transcript_text = transcript_text_from_record(stored_arabic)
+
+    if not transcript_text:
+        raise InvalidPipelineStateError("Arabic transcript generation returned no transcript_text.")
+
+    return transcript_text
+
+
+async def video_url_status_pipeline(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+    expires_in: int = 3600,
+):
+    if not audio_storage.is_s3_video_enabled():
+        raise VideoUrlUnavailableError()
+
+    s3_key = build_video_s3_key(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+    )
+
+    video_metadata = await asyncio.to_thread(audio_storage.get_video_metadata, s3_key)
+
+    if not video_metadata:
+        return {
+            "status": "processing",
+            "source": "pending",
+            "video_url": None,
+            "expires_in": expires_in,
+            "content_type": "video/mp4",
+            "size_bytes": None,
+            "s3_key": s3_key,
+        }
+
+    video_url = await asyncio.to_thread(
+        audio_storage.create_presigned_video_url,
+        s3_key,
+        expires_in,
+    )
+
+    return {
+        "status": "ready",
+        "source": "cache",
+        "video_url": video_url,
+        "expires_in": expires_in,
+        "content_type": video_metadata.get("content_type") or "video/mp4",
+        "size_bytes": video_metadata.get("content_length"),
+        "s3_key": s3_key,
+    }
+
+
+async def wait_for_video_upload(s3_key: str) -> dict | None:
+    deadline = asyncio.get_running_loop().time() + settings.video_upload_wait_seconds
+
+    while True:
+        video_metadata = await asyncio.to_thread(audio_storage.get_video_metadata, s3_key)
+        if video_metadata:
+            return video_metadata
+
+        if asyncio.get_running_loop().time() >= deadline:
+            return None
+
+        await asyncio.sleep(settings.video_upload_poll_seconds)
+
+
+async def ensure_video_generated_pipeline(
+    *,
+    user_id: str,
+    lesson_id: str,
+    document_id: str,
+):
+    if not audio_storage.is_s3_video_enabled():
+        raise VideoUrlUnavailableError()
+
+    s3_key = build_video_s3_key(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+    )
+
+    video_metadata = await asyncio.to_thread(audio_storage.get_video_metadata, s3_key)
+    if video_metadata:
+        return {
+            "status": "ready",
+            "source": "cache",
+            "s3_key": s3_key,
+            "size_bytes": video_metadata.get("content_length"),
+        }
+
+    document = await clients.get_document(document_id)
+    if not document:
+        raise DocumentNotFoundError(document_id)
+
+    summary_text, english_transcript = await asyncio.gather(
+        get_or_create_summary_text(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+        ),
+        get_or_create_english_transcript_text(
+            user_id=user_id,
+            lesson_id=lesson_id,
+            document_id=document_id,
+        ),
+    )
+    arabic_transcript = await get_or_create_arabic_transcript_text(
+        user_id=user_id,
+        lesson_id=lesson_id,
+        document_id=document_id,
+    )
+
+    slides_response = await clients.create_video_slides_from_text_services(
+        topic_title=document.get("title") or f"Document {document_id}",
+        mode=VIDEO_MODE,
+        max_slides=VIDEO_MAX_SLIDES,
+        summary_text=summary_text,
+        english_transcript=english_transcript,
+        arabic_transcript=arabic_transcript,
+    )
+    slides = slides_response.get("slides") if isinstance(slides_response, dict) else None
+
+    if not slides:
+        raise InvalidPipelineStateError("Video slide adapter returned no slides.")
+
+    video_bucket = audio_storage.get_video_bucket()
+    if not video_bucket:
+        raise VideoUrlUnavailableError()
+
+    upload_request = {
+        "bucket": video_bucket,
+        "key": s3_key,
+        "content_type": "video/mp4",
+    }
+
+    generated_video = await clients.generate_video(
+        slides=slides,
+        output_name=f"{document_id}_{VIDEO_MODE}.mp4",
+        quality=VIDEO_QUALITY,
+        transition=VIDEO_TRANSITION,
+        no_cache=VIDEO_NO_CACHE,
+        tts_backend=VIDEO_TTS_BACKEND,
+        tts_generation_preset=VIDEO_TTS_GENERATION_PRESET,
+        tts_max_chars=VIDEO_TTS_MAX_CHARS,
+        tts_min_chars=VIDEO_TTS_MIN_CHARS,
+        upload=upload_request,
+    )
+
+    returned_key = (
+        generated_video.get("s3_key")
+        or generated_video.get("key")
+        if isinstance(generated_video, dict)
+        else None
+    )
+
+    if returned_key and returned_key != s3_key:
+        raise InvalidPipelineStateError(
+            f"Video service uploaded unexpected S3 key '{returned_key}', expected '{s3_key}'."
+        )
+
+    video_metadata = await wait_for_video_upload(s3_key)
+    if not video_metadata:
+        raise InvalidPipelineStateError(
+            "Video service did not upload the expected S3 object before the wait timeout."
+        )
+
+    return {
+        "status": "ready",
+        "source": "generated",
+        "s3_key": s3_key,
+        "size_bytes": video_metadata.get("content_length")
+        or (
+            generated_video.get("size_bytes")
+            if isinstance(generated_video, dict)
+            else None
+        ),
+        "slides_count": len(slides),
     }
 
 
