@@ -1,3 +1,5 @@
+import re
+
 import httpx
 
 from app.config import settings
@@ -5,6 +7,23 @@ from app.config import settings
 
 class ServiceError(Exception):
     pass
+
+
+LATEXIT_RE = re.compile(r"<latexit\b[^>]*>.*?</latexit>", re.DOTALL)
+WHITESPACE_RE = re.compile(r"\s+")
+
+
+def _clean_text(text: str) -> str:
+    text = LATEXIT_RE.sub(" ", text)
+    text = WHITESPACE_RE.sub(" ", text)
+    return text.strip()
+
+
+def _trim_text(text: str, max_chars: int) -> str:
+    text = _clean_text(text)
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars].rsplit(" ", 1)[0].rstrip() + "..."
 
 
 async def request_json(
@@ -82,6 +101,7 @@ async def generate_answer(question: str, chunks: list[dict], memory_turns: list[
         raise ServiceError("GROQ_API_KEY is not configured for rag_service.")
 
     context_blocks = []
+    context_chars = 0
     for index, chunk in enumerate(chunks, start=1):
         text = (
             chunk.get("chunk_text")
@@ -89,18 +109,28 @@ async def generate_answer(question: str, chunks: list[dict], memory_turns: list[
             or chunk.get("content")
             or str(chunk)
         )
+        text = _trim_text(text, settings.rag_chunk_max_chars)
+        if not text:
+            continue
+
+        remaining_chars = settings.rag_context_max_chars - context_chars
+        if remaining_chars <= 0:
+            break
+        if len(text) > remaining_chars:
+            text = _trim_text(text, remaining_chars)
+
         source = chunk.get("did") or "document"
         chunk_index = chunk.get("chunk_index")
-        context_blocks.append(
-            f"[Chunk {index} | document={source} | chunk_index={chunk_index}]\n{text}"
-        )
+        block = f"[Chunk {index} | document={source} | chunk_index={chunk_index}]\n{text}"
+        context_blocks.append(block)
+        context_chars += len(block)
 
     context = "\n\n".join(context_blocks)
 
     history_lines = []
-    for turn in memory_turns[-8:]:
+    for turn in memory_turns[-settings.rag_history_max_turns:]:
         role = turn.get("role", "user")
-        content = turn.get("content", "")
+        content = _trim_text(turn.get("content", ""), 600)
         history_lines.append(f"{role}: {content}")
 
     messages = [
@@ -153,6 +183,10 @@ async def generate_answer(question: str, chunks: list[dict], memory_turns: list[
         )
 
     if response.status_code not in {200, 201}:
+        if response.status_code == 429:
+            raise ServiceError(
+                "RAG model rate limit was reached. Please wait a few seconds and try again."
+            )
         raise ServiceError(
             f"RAG LLM call failed: status={response.status_code} body={response.text[:500]}"
         )

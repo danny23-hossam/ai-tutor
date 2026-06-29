@@ -60,7 +60,11 @@ services:
       MEMORY_MAX_TURNS: 12
       RAG_MODEL_NAME: openai/gpt-oss-20b
       RAG_TEMPERATURE: 0.2
-      RAG_MAX_TOKENS: 900
+      RAG_MAX_TOKENS: 500
+      RAG_TOP_K: 4
+      RAG_CONTEXT_MAX_CHARS: 4500
+      RAG_CHUNK_MAX_CHARS: 1200
+      RAG_HISTORY_MAX_TURNS: 4
     volumes:
       - rag_data:/data
     depends_on:
@@ -82,8 +86,8 @@ services:
       TTS_MODEL_CACHE: /app/models_cache/namaa_dahih_lora_hf
       TTS_OUTPUT_DIR: /app/outputs
       TTS_ARABIC_REFERENCE_WAV: /app/arabic_model/reference.wav
-      TTS_MIN_CHARS: 80
-      TTS_MAX_CHARS: 180
+      TTS_MIN_CHARS: 100
+      TTS_MAX_CHARS: 320
       TTS_PAUSE_MS: 350
       TTS_COMMA_PAUSE_MS: 180
       TTS_STOP_PAUSE_MS: 450
@@ -144,7 +148,8 @@ services:
       # TTS_SERVICE_URL: ${TTS_SERVICE_URL:-http://tts_service:8000}
       TTS_SERVICE_URL: http://tts_service:8000
       DOCUMENT_SERVICE_URL: http://document_service:8000
-      VIDEO_SERVICE_URL: https://tea-presentations-delivering-territory.trycloudflare.com
+      REQUEST_TIMEOUT_SECONDS: 3600
+      VIDEO_SERVICE_URL: ${VIDEO_SERVICE_URL:-}
       S3_VIDEO_BUCKET: ${S3_VIDEO_BUCKET:-}
       S3_VIDEO_PREFIX: ${S3_VIDEO_PREFIX:-video}
       VIDEO_UPLOAD_WAIT_SECONDS: ${VIDEO_UPLOAD_WAIT_SECONDS:-1800}

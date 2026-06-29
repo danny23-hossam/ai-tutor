@@ -32,7 +32,7 @@ async def ask(req: AskRequest):
             lesson_id=req.lesson_id,
             document_id=req.document_id,
             question=req.question,
-            top_k=10,
+            top_k=settings.rag_top_k,
         )
         chunks = retrieved.get("results", []) if retrieved else []
         memory_turns = memory.get_recent(req.user_id, req.lesson_id, req.document_id)

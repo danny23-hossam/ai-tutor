@@ -15,6 +15,7 @@ This service orchestrates all AI Tutor flows. The frontend should call this serv
 - `/pipeline/flashcards`: Generate or fetch cached flashcards.
 - `/pipeline/transcript`: Generate or fetch a TTS transcript.
 - `/pipeline/audio`: Generate audio from a stored transcript.
+- `/pipeline/video/prepare`: Start or poll S3-backed video generation.
 - `/pipeline/ask`: Ask the RAG service with user/lesson/document memory.
 - `/pipeline/chat/history`: Retrieve retained RAG chat memory for a user/lesson/document.
 - `/health`: Check connected services.
@@ -26,6 +27,16 @@ This service orchestrates all AI Tutor flows. The frontend should call this serv
 - `RAG_SERVICE_URL`: RAG chat and memory service.
 - `TTS_SERVICE_URL`: text-to-speech service.
 - `DOCUMENT_SERVICE_URL`: document extraction service.
+- `VIDEO_SERVICE_URL`: external video generation service. This must be a valid
+  `http://` or `https://` base URL; do not hardcode temporary tunnel URLs in
+  `docker-compose.yml`.
+
+## Video Retry
+
+If `/pipeline/video/prepare` reports a failed generation attempt, fix the
+upstream video service URL or service availability, then call the same endpoint
+with `retry_failed: true` to start a new attempt. Regular polling does not retry
+failed jobs automatically.
 
 ## Models
 

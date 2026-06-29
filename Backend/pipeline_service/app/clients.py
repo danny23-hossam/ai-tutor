@@ -8,6 +8,17 @@ class ServiceError(Exception):
     pass
 
 
+def _configured_base_url(value: str, setting_name: str) -> str:
+    base_url = value.strip().rstrip("/")
+    if not base_url:
+        raise ServiceError(f"{setting_name} is not configured.")
+    return base_url
+
+
+def _video_service_url() -> str:
+    return _configured_base_url(settings.video_service_url, "VIDEO_SERVICE_URL")
+
+
 async def request_json(
     method: str,
     url: str,
@@ -21,13 +32,18 @@ async def request_json(
 
     expected_statuses = expected_statuses or {200, 201}
 
-    async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
-        response = await client.request(
-            method,
-            url,
-            json=json_payload,
-            params=params,
-        )
+    try:
+        async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
+            response = await client.request(
+                method,
+                url,
+                json=json_payload,
+                params=params,
+            )
+    except httpx.RequestError as exc:
+        raise ServiceError(
+            f"Service call failed: {method} {url} connection_error={exc}"
+        ) from exc
 
     if response.status_code not in expected_statuses:
         raise ServiceError(
@@ -719,7 +735,7 @@ async def create_video_slides_from_text_services(
 ):
     return await request_json(
         "POST",
-        f"{settings.video_service_url}/slides/from-text-services",
+        f"{_video_service_url()}/slides/from-text-services",
         json_payload={
             "topic_title": topic_title,
             "mode": mode,
@@ -766,11 +782,15 @@ async def generate_video(
             "upload": upload,
     }
 
-    async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
-        response = await client.post(
-            f"{settings.video_service_url}/video",
-            json=payload,
-        )
+    video_url = f"{_video_service_url()}/video"
+
+    try:
+        async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
+            response = await client.post(video_url, json=payload)
+    except httpx.RequestError as exc:
+        raise ServiceError(
+            f"Service call failed: POST {video_url} connection_error={exc}"
+        ) from exc
 
     if response.status_code == 524:
         return {

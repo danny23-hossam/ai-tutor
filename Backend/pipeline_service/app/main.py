@@ -146,6 +146,10 @@ async def run_video_generation(req: VideoRequest, task_key: str):
             lesson_id=req.lesson_id,
             document_id=req.document_id,
         )
+    except PipelineError as exc:
+        video_generation_errors[task_key] = str(exc)
+    except clients.ServiceError as exc:
+        video_generation_errors[task_key] = str(exc)
     except Exception as exc:
         traceback.print_exc()
         video_generation_errors[task_key] = str(exc)
@@ -451,9 +455,19 @@ async def prepare_video(req: VideoRequest):
             video_generation_errors.pop(task_key, None)
             return result
 
-        if task_key in video_generation_errors:
-            # Previous attempt failed or timed out. Clear the error and start a new request
-            # if the S3 object is still missing.
+        previous_error = video_generation_errors.get(task_key)
+        if previous_error and not req.retry_failed:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "status": "failed",
+                    "message": previous_error,
+                    "s3_key": task_key,
+                    "retry_failed": False,
+                },
+            )
+
+        if previous_error and req.retry_failed:
             video_generation_errors.pop(task_key, None)
 
         started = await ensure_video_generation_started(req, task_key)

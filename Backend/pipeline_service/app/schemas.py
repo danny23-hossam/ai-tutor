@@ -48,4 +48,4 @@ class AudioRequest(BasePipelineRequest):
 
 
 class VideoRequest(BasePipelineRequest):
-    pass
+    retry_failed: bool = False

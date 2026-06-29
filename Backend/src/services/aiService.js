@@ -13,10 +13,36 @@ const fs = require('fs');
 // The pipeline service is the single entry point for all AI operations.
 const AI_API_URL = process.env.AI_API_URL || 'http://localhost:8005';
 
+function timeoutFromEnv(name, fallback) {
+    const value = Number(process.env[name]);
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+const AI_REQUEST_TIMEOUT_MS = timeoutFromEnv('AI_REQUEST_TIMEOUT_MS', 600_000);
+const AI_UPLOAD_TIMEOUT_MS = timeoutFromEnv('AI_UPLOAD_TIMEOUT_MS', AI_REQUEST_TIMEOUT_MS);
+const AI_GENERATION_TIMEOUT_MS = timeoutFromEnv('AI_GENERATION_TIMEOUT_MS', AI_REQUEST_TIMEOUT_MS);
+
+function logPipelineError(operation, err) {
+    const timeout = err.config?.timeout;
+
+    if (err.code === 'ECONNABORTED') {
+        console.error(`[aiService] Pipeline ${operation} timed out after ${timeout || 'unknown'}ms`);
+        return;
+    }
+
+    if (err.response) {
+        const responseBody = JSON.stringify(err.response.data || {}).slice(0, 500);
+        console.error(`[aiService] Pipeline ${operation} failed: status=${err.response.status} body=${responseBody}`);
+        return;
+    }
+
+    console.error(`[aiService] Pipeline ${operation} failed:`, err.message);
+}
+
 // Longer timeout for AI models (OCR + generation can take 1-5 minutes)
 const ai = axios.create({
     baseURL: AI_API_URL,
-    timeout: 300_000, // 5 minutes — OCR on large PDFs can be slow
+    timeout: AI_REQUEST_TIMEOUT_MS,
     headers: {
         // Bypass ngrok's free-tier browser interstitial page.
         // Without this, ngrok returns HTML instead of the API response.
@@ -64,12 +90,12 @@ async function callPipelineUpload(userId, documentId, lessonId, fileBuffer, file
 
         const res = await ai.post('/pipeline/documents/upload', form, {
             headers: form.getHeaders(),
-            timeout: 300_000, // 5 min — large PDFs + OCR can be slow
+            timeout: AI_UPLOAD_TIMEOUT_MS,
         });
         console.log(`[aiService] Pipeline upload OK: doc=${documentId} lesson=${lessonId} source=${res.data?.source}`);
         return res.data;
     } catch (err) {
-        console.error('[aiService] Pipeline document upload failed:', err.message);
+        logPipelineError('document upload', err);
         return null;
     }
 }
@@ -88,11 +114,13 @@ async function callPipelineSummary(userId, documentId, lessonId) {
             user_id: String(userId),
             document_id: String(documentId),
             lesson_id: String(lessonId),
+        }, {
+            timeout: AI_GENERATION_TIMEOUT_MS,
         });
         // Response: { source, summary: { summary_text, ... } }
         return res.data?.summary?.summary_text || null;
     } catch (err) {
-        console.error('[aiService] Pipeline summary failed:', err.message);
+        logPipelineError('summary', err);
         return null;
     }
 }
@@ -117,6 +145,8 @@ async function callPipelineFlashcards(userId, documentId, lessonId, qty = 'stand
             lesson_id: String(lessonId),
             qty,
             diff,
+        }, {
+            timeout: AI_GENERATION_TIMEOUT_MS,
         });
 
         let flashcards = res.data?.flashcards;
@@ -139,7 +169,7 @@ async function callPipelineFlashcards(userId, documentId, lessonId, qty = 'stand
             common_mistake: fc.common_mistake || '',
         }));
     } catch (err) {
-        console.error('[aiService] Pipeline flashcards failed:', err.message);
+        logPipelineError('flashcards', err);
         return null;
     }
 }
@@ -164,6 +194,8 @@ async function callPipelineQuestions(userId, documentId, lessonId, qty = 'standa
             lesson_id: String(lessonId),
             qty,
             diff,
+        }, {
+            timeout: AI_GENERATION_TIMEOUT_MS,
         });
 
         let questions = res.data?.questions;
@@ -190,7 +222,7 @@ async function callPipelineQuestions(userId, documentId, lessonId, qty = 'standa
             explanation: q.explanation || '',
         }));
     } catch (err) {
-        console.error('[aiService] Pipeline questions failed:', err.message);
+        logPipelineError('questions', err);
         return null;
     }
 }
@@ -365,4 +397,6 @@ module.exports = {
     callQuestions,
     callOCR,
     AI_API_URL,
+    AI_REQUEST_TIMEOUT_MS,
+    AI_GENERATION_TIMEOUT_MS,
 };

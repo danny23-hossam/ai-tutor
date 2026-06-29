@@ -361,7 +361,14 @@ app.use('/api/study-days', studyDaysRoutes);
 
 
 const PORT = process.env.PORT || 5000;
+const HTTP_REQUEST_TIMEOUT_MS = Number(process.env.HTTP_REQUEST_TIMEOUT_MS) > 0
+    ? Number(process.env.HTTP_REQUEST_TIMEOUT_MS)
+    : 660_000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Papyrus Server running on port ${PORT}`);
 });
+
+server.requestTimeout = HTTP_REQUEST_TIMEOUT_MS;
+server.timeout = HTTP_REQUEST_TIMEOUT_MS;
+server.headersTimeout = Math.max(65_000, HTTP_REQUEST_TIMEOUT_MS + 1_000);
